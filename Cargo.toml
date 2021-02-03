@@ -1,0 +1,12 @@
+[package]
+name = "pqrs"
+version = "0.1.0"
+authors = ["Manoj Karthick <manojkarthick@ymail.com>"]
+edition = "2018"
+
+[dependencies]
+thiserror = "1.0.22"
+log = "0.4.11"
+env_logger = "0.8.2"
+parquet = { git = "https://github.com/manojkarthick/arrow", features = ["cli"], branch = "rust-compressed-size" }
+clap = "2.33.3"
