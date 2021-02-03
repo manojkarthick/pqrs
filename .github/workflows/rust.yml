@@ -1,0 +1,71 @@
+name: build
+
+on: [push]
+
+jobs:
+  job_on_push:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install latest rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          override: true
+
+      - name: Check compilation
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Publish for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        name: [
+            linux,
+            windows,
+            macos
+        ]
+
+        include:
+          - name: linux
+            os: ubuntu-latest
+            artifact_name: target/release/pqrs
+            asset_name: pqrs-linux-amd64
+          - name: windows
+            os: windows-latest
+            artifact_name: target/release/pqrs.exe
+            asset_name: pqrs-windows-amd64
+          - name: macos
+            os: macos-latest
+            artifact_name: target/release/pqrs
+            asset_name: pqrs-macos-amd64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install latest rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
+          overwrite: true
