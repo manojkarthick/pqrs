@@ -1,0 +1,6 @@
+max_width = 90
+
+# ignore generated files
+# ignore = [
+#    "arrow/src/ipc/gen",
+#]
