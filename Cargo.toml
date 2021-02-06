@@ -8,5 +8,7 @@ edition = "2018"
 thiserror = "1.0.22"
 log = "0.4.11"
 env_logger = "0.8.2"
-parquet = { git = "https://github.com/manojkarthick/arrow", features = ["cli"], branch = "rust-compressed-size" }
+parquet = { git = "https://github.com/apache/arrow", features = ["cli"], branch = "master" }
+arrow = { git = "https://github.com/apache/arrow", branch = "master" }
 clap = "2.33.3"
+rand = "0.8.3"
