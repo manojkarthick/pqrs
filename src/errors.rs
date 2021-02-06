@@ -1,4 +1,6 @@
+use arrow::error::ArrowError;
 use parquet::errors::ParquetError;
+use std::io;
 use std::num::ParseIntError;
 use thiserror::Error;
 
@@ -15,4 +17,8 @@ pub enum PQRSError {
     ParquetError(#[from] ParquetError),
     #[error("Unable to read given integer")]
     UnableToReadNumber(#[from] ParseIntError),
+    #[error("Unable to process file")]
+    UnableToProcessFile(#[from] io::Error),
+    #[error("Unable to read/write arrow data")]
+    ArrowReadWriteError(#[from] ArrowError),
 }
