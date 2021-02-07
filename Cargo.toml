@@ -1,14 +1,14 @@
 [package]
 name = "pqrs"
-version = "0.1.0"
-authors = ["Manoj Karthick <manojkarthick@ymail.com>"]
+version = "0.1.1"
+authors = ["Manoj Karthick"]
 edition = "2018"
 
 [dependencies]
 thiserror = "1.0.22"
 log = "0.4.11"
 env_logger = "0.8.2"
-parquet = { git = "https://github.com/apache/arrow", features = ["cli"], branch = "master" }
-arrow = { git = "https://github.com/apache/arrow", branch = "master" }
+parquet = { git = "https://github.com/apache/arrow", features = ["cli"], rev = "a321cded" }
+arrow = { git = "https://github.com/apache/arrow", rev = "a321cded" }
 clap = "2.33.3"
 rand = "0.8.3"

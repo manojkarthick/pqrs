@@ -111,7 +111,7 @@ impl Add for ParquetData {
     }
 }
 
-pub fn combine_contents(input: &str) -> Result<ParquetData, PQRSError> {
+pub fn get_row_batches(input: &str) -> Result<ParquetData, PQRSError> {
     let file = open_file(input)?;
     let file_reader = SerializedFileReader::new(file).unwrap();
     let mut arrow_reader = ParquetFileArrowReader::new(Arc::new(file_reader));
