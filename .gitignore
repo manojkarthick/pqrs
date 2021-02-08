@@ -2,6 +2,6 @@
 *.env
 .idea/
 .DS_Store
-data/
+mock/
 *.iml
 
