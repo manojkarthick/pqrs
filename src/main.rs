@@ -36,6 +36,7 @@ fn main() -> Result<(), PQRSError> {
 
     // initialize logger for the app and set logging level to info if no environment variable present
     let mut env = Env::default();
+    // if --debug flag is used, then set logging level to debug
     if matches.is_present("debug") {
         env = env.default_filter_or("debug");
     } else {
@@ -44,6 +45,7 @@ fn main() -> Result<(), PQRSError> {
 
     env_logger::Builder::from_env(env).init();
 
+    // run the right subcommand
     command::run_command(matches)?;
 
     Ok(())

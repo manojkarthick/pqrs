@@ -8,11 +8,15 @@ use crate::commands::size::SizeCommand;
 use crate::errors::PQRSError;
 use clap::ArgMatches;
 
+/// The trait to be implemented by every subcommand in the binary
 pub trait PQRSCommand {
+    /// The execute method runs the command and return errors, if any
     fn execute(&self) -> Result<(), PQRSError>;
 }
 
+/// Run the appropriate subcommand based on the input from the user.
 pub fn run_command(matches: ArgMatches) -> Result<(), PQRSError> {
+    // match based on the subcommand name, create an instance and execute the command
     match matches.subcommand() {
         ("cat", Some(m)) => CatCommand::new(m).execute(),
         ("head", Some(m)) => HeadCommand::new(m).execute(),
