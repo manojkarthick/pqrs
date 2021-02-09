@@ -6,12 +6,14 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 use log::debug;
 use std::fmt;
 
+/// The config params for the "cat" subcommand
 pub struct CatCommand<'a> {
     file_names: Vec<&'a str>,
     use_json: bool,
 }
 
 impl<'a> CatCommand<'a> {
+    /// Return the clap subcommand definition
     pub(crate) fn command() -> App<'static, 'static> {
         SubCommand::with_name("cat")
             .about("Prints the contents of Parquet file(s)")

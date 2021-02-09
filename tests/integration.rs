@@ -24,8 +24,10 @@ static SCHEMA_OUTPUT: &'static str = r#"message hive_schema {
 static SAMPLE_PARTIAL_OUTPUT_1: &'static str = "{continent:";
 static SAMPLE_PARTIAL_OUTPUT_2: &'static str = "country: {name:";
 
+/// Integration tests for the crate
 mod integration {
 
+    // make sure any new commands added have a corresponding integration test here!
     use crate::{
         CAT_JSON_OUTPUT, CAT_OUTPUT, CITIES_PARQUET_PATH, MERGED_FILE_NAME,
         PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH, SAMPLE_PARTIAL_OUTPUT_1,
