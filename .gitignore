@@ -4,4 +4,6 @@
 .DS_Store
 mock/
 *.iml
+.envrc
+*.tar.gz
 
