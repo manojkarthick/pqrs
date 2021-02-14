@@ -47,7 +47,7 @@ jobs:
           - name: windows
             os: windows-latest
             artifact_name: target/release/pqrs.exe
-            asset_name: pqrs-windows-amd64
+            asset_name: pqrs-windows-amd64.exe
           - name: macos
             os: macos-latest
             artifact_name: target/release/pqrs
@@ -65,6 +65,10 @@ jobs:
 
       - name: Build
         run: cargo build --release --locked
+
+      - name: Strip
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        run: strip target/release/pqrs
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
