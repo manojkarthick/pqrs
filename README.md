@@ -1,4 +1,4 @@
-# pqrs
+# pqrs ![build](https://github.com/manojkarthick/pqrs/workflows/build/badge.svg)
 
 * `pqrs` is a command line tool for inspecting [Parquet](https://parquet.apache.org/) files
 * This is a replacement for the [parquet-tools](https://github.com/apache/parquet-mr/tree/master/parquet-tools-deprecated) utility written in Rust
