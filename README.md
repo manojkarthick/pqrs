@@ -25,7 +25,10 @@ brew install pqrs
 
 #### Using nix
 
-TODO
+If you are a [nix](https://github.com/NixOS/nix) user, you can install `pqrs` from [nixpkgs](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/pqrs/default.nix)
+```shell script
+nix-env --install pqrs
+```
 
 #### Building and running from source
 
