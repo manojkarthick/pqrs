@@ -14,6 +14,14 @@ You can download release binaries [here](https://github.com/manojkarthick/pqrs/r
 
 ### Alternative methods
 
+#### Using macports
+
+You can use [macports](https://www.macports.org/) to install `pqrs` if you are a macOS user.
+
+```
+sudo port install pqrs
+```
+
 #### Using Homebrew
 
 For macOS users, `pqrs` is available as a homebrew tap.
