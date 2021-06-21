@@ -23,6 +23,14 @@ brew tap manojkarthick/pqrs
 brew install pqrs
 ```
 
+#### Using cargo
+
+`pqrs` is also available for installation from [crates.io](https://crates.io/crates/pqrs) using `cargo`, the rust package manager.
+
+```shell script
+cargo install pqrs
+```
+
 #### Using nix
 
 If you are a [nix](https://github.com/NixOS/nix) user, you can install `pqrs` from [nixpkgs](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/pqrs/default.nix)
@@ -46,7 +54,7 @@ The below snippet shows the available subcommands:
 
 ```
 ❯ pqrs --help
-pqrs 0.1.1
+pqrs 0.1.2
 Manoj Karthick
 Apache Parquet command-line utility
 
@@ -218,5 +226,5 @@ Compressed Size: 12 KiB
 
 ### TODO
 
-* [ ] Add crate
+* [x] Add crate
 * [ ] Test on Windows
