@@ -1,6 +1,6 @@
 [package]
 name = "pqrs"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Manoj Karthick"]
 description = "Apache Parquet command-line tools and utilities"
 edition = "2018"
@@ -19,8 +19,9 @@ parquet = { version = "4.3.0", features = ["cli"] }
 arrow = "4.3.0"
 clap = "2.33.3"
 rand = "0.8.3"
+tempfile = "3.2.0"
+walkdir = "2.3.2"
 
 [dev-dependencies]
-tempfile = "3.2.0"
 assert_cmd = "1.0.3"
 predicates = "1.0.7"

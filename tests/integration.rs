@@ -1,3 +1,4 @@
+static SIMPLE_PARQUET_PATH: &'static str = "data/simple.parquet";
 static CITIES_PARQUET_PATH: &'static str = "data/cities.parquet";
 static PEMS_1_PARQUET_PATH: &'static str = "data/pems-1.snappy.parquet";
 static PEMS_2_PARQUET_PATH: &'static str = "data/pems-2.snappy.parquet";
@@ -9,6 +10,11 @@ static CAT_OUTPUT: &'static str = r#"{continent: "Europe", country: {name: "Fran
 static CAT_JSON_OUTPUT: &'static str = r#"{"continent":"Europe","country":{"name":"France","city":["Paris","Nice","Marseilles","Cannes"]}}
 {"continent":"Europe","country":{"name":"Greece","city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"]}}
 {"continent":"North America","country":{"name":"Canada","city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"]}}
+"#;
+static CAT_CSV_OUTPUT: &'static str = r#"
+foo,bar
+1,2
+10,20
 "#;
 static SCHEMA_OUTPUT: &'static str = r#"message hive_schema {
   OPTIONAL BYTE_ARRAY continent (UTF8);
@@ -26,12 +32,11 @@ static SAMPLE_PARTIAL_OUTPUT_2: &'static str = "country: {name:";
 
 /// Integration tests for the crate
 mod integration {
-
     // make sure any new commands added have a corresponding integration test here!
     use crate::{
         CAT_JSON_OUTPUT, CAT_OUTPUT, CITIES_PARQUET_PATH, MERGED_FILE_NAME,
         PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH, SAMPLE_PARTIAL_OUTPUT_1,
-        SAMPLE_PARTIAL_OUTPUT_2, SCHEMA_OUTPUT,
+        SAMPLE_PARTIAL_OUTPUT_2, SCHEMA_OUTPUT, SIMPLE_PARQUET_PATH, CAT_CSV_OUTPUT,
     };
     use assert_cmd::Command;
     use predicates::prelude::*;
@@ -55,6 +60,34 @@ mod integration {
         cmd.assert()
             .success()
             .stdout(predicate::str::contains(CAT_JSON_OUTPUT));
+
+        Ok(())
+    }
+
+    #[test]
+    fn validate_cat_csv() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat").arg(SIMPLE_PARQUET_PATH).arg("--csv");
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::contains(CAT_CSV_OUTPUT));
+
+        Ok(())
+    }
+
+    #[test]
+    fn validate_cat_directory() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat").arg("data");
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::contains("cities.parquet").and(
+                predicate::str::contains("simple.parquet").and(
+                    predicate::str::contains("pems-1.snappy.parquet").and(
+                        predicate::str::contains("pems-2.snappy.parquet")
+                    )
+                )
+            ));
 
         Ok(())
     }
