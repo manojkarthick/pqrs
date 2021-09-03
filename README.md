@@ -105,7 +105,7 @@ Supports json-like, json or CSV format. Use `--json` for JSON output and `--csv`
 ```
 
 ```
-❯ pqrs cat data/sample.parquet --json
+❯ pqrs cat data/simple.parquet --csv
 foo,bar
 1,2
 10,20
