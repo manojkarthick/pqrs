@@ -62,7 +62,7 @@ The below snippet shows the available subcommands:
 
 ```
 ❯ pqrs --help
-pqrs 0.1.2
+pqrs 0.2.0
 Manoj Karthick
 Apache Parquet command-line utility
 
@@ -87,7 +87,8 @@ SUBCOMMANDS:
 
 ### Subcommand: cat
 
-Prints the contents of the parquet file in a json-like or json format. Use `--json` for JSON output.
+Prints the contents of the given files and folders. Recursively traverses and prints all the files if the input is a directory. 
+Supports json-like, json or CSV format. Use `--json` for JSON output and `--csv` for CSV output.
 
 ```
 ❯ pqrs cat data/cities.parquet
@@ -102,6 +103,15 @@ Prints the contents of the parquet file in a json-like or json format. Use `--js
 {"continent":"Europe","country":{"name":"Greece","city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"]}}
 {"continent":"North America","country":{"name":"Canada","city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"]}}
 ```
+
+```
+❯ pqrs cat data/sample.parquet --json
+foo,bar
+1,2
+10,20
+```
+
+NOTE: CSV format is not supported for files that contain Struct or Byte fields.
 
 ### Subcommand: head
 
@@ -234,5 +244,4 @@ Compressed Size: 12 KiB
 
 ### TODO
 
-* [x] Add crate
 * [ ] Test on Windows
