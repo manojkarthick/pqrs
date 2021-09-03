@@ -1,7 +1,7 @@
 use crate::command::PQRSCommand;
 use crate::errors::PQRSError;
 use crate::errors::PQRSError::{FileExists, FileNotFound};
-use crate::utils::{check_path_present, get_row_batches, write_parquet};
+use crate::utils::{check_path_present, get_row_batches, write_parquet, open_file};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use log::debug;
 use std::fmt;
@@ -61,9 +61,11 @@ impl<'a> PQRSCommand for MergeCommand<'a> {
             }
         }
 
-        let mut combined = get_row_batches(self.inputs[0])?;
+        let seed = open_file(self.inputs[0])?;
+        let mut combined = get_row_batches(seed)?;
         for input in &self.inputs[1..] {
-            let local = get_row_batches(input)?;
+            let current = open_file(input)?;
+            let local = get_row_batches(current)?;
             combined = combined.add(local);
         }
         // debug!("The combined data looks like this: {:#?}", combined);

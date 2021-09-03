@@ -1,5 +1,5 @@
 use crate::errors::PQRSError;
-use crate::errors::PQRSError::CouldNotOpenFile;
+use crate::errors::PQRSError::{CouldNotOpenFile, UnsupportedOperation};
 use arrow::{datatypes::Schema, record_batch::RecordBatch};
 use log::debug;
 use parquet::arrow::{ArrowReader, ArrowWriter, ParquetFileArrowReader};
@@ -11,6 +11,10 @@ use std::fs::File;
 use std::ops::Add;
 use std::path::Path;
 use std::sync::Arc;
+use arrow::csv;
+use tempfile::NamedTempFile;
+use std::io::Read;
+use walkdir::DirEntry;
 
 // calculate the sizes in bytes for one KiB, MiB, GiB, TiB, PiB
 static ONE_KI_B: i64 = 1024;
@@ -18,6 +22,20 @@ static ONE_MI_B: i64 = ONE_KI_B * 1024;
 static ONE_GI_B: i64 = ONE_MI_B * 1024;
 static ONE_TI_B: i64 = ONE_GI_B * 1024;
 static ONE_PI_B: i64 = ONE_TI_B * 1024;
+
+/// Output formats supported. Only cat command support CSV format.
+#[derive(Debug)]
+pub enum Formats {
+    Default,
+    Csv,
+    Json,
+}
+
+impl std::fmt::Display for Formats {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 /// Check if a particular path is present on the filesystem
 pub fn check_path_present(file_path: &str) -> bool {
@@ -35,28 +53,76 @@ pub fn open_file(file_name: &str) -> Result<File, PQRSError> {
     Ok(file)
 }
 
+/// Check if the given entry in the walking tree is a hidden file
+pub fn is_hidden(entry: &DirEntry) -> bool {
+    entry.file_name()
+        .to_str()
+        .map(|s| s.starts_with("."))
+        .unwrap_or(false)
+}
+
+
 /// Print the given number of records in either json or json-like format
 pub fn print_rows(
     file: File,
     num_records: Option<i64>,
-    json: bool,
+    format: &Formats,
 ) -> Result<(), PQRSError> {
-    let parquet_reader = SerializedFileReader::new(file)?;
-    // get_row_iter allows us to iterate the parquet file one record at a time
-    let mut iter = parquet_reader.get_row_iter(None)?;
+    match format {
+        Formats::Default | Formats::Json => {
+            let parquet_reader = SerializedFileReader::new(file)?;
+            // get_row_iter allows us to iterate the parquet file one record at a time
+            let mut iter = parquet_reader.get_row_iter(None)?;
 
-    let mut start: i64 = 0;
-    let end: i64 = num_records.unwrap_or(0);
-    // if num_records is None, print all the files
-    let all_records = num_records.is_none();
+            let mut start: i64 = 0;
+            let end: i64 = num_records.unwrap_or(0);
+            // if num_records is None, print all the files
+            let all_records = num_records.is_none();
 
-    // print either all records, or the requested number of records
-    while all_records || start < end {
-        match iter.next() {
-            Some(row) => print_row(&row, json),
-            None => break,
+            // print either all records, or the requested number of records
+            while all_records || start < end {
+                match iter.next() {
+                    Some(row) => print_row(&row, format),
+                    None => break,
+                }
+                start += 1;
+            }
+        },
+        Formats::Csv => {
+            if num_records.is_some() {
+                return Err(UnsupportedOperation())
+            } else {
+                let output = print_csv(file);
+                if output.is_err() {
+                    println!("{:?}", output);
+                }
+            }
         }
-        start += 1;
+    }
+
+    Ok(())
+}
+
+/// Print the given parquet file in CSV format
+pub fn print_csv(
+    file: File
+) -> Result<(), PQRSError> {
+    let data = get_row_batches(file)?;
+    let output = NamedTempFile::new()?;
+    // let output = get_temp_file("out.csv", &[]);
+    let mut writer = csv::Writer::new(&output);
+    for batch in &data.batches {
+        writer.write(batch)?;
+    }
+
+    let mut buf = String::new();
+    let mut result = output.reopen()?;
+    result.read_to_string(&mut buf)?;
+
+    if buf.len() == 0 {
+        print!("Empty.");
+    } else {
+        print!("{}", buf);
     }
 
     Ok(())
@@ -66,7 +132,7 @@ pub fn print_rows(
 pub fn print_rows_random(
     file: File,
     sample_size: i64,
-    json: bool,
+    format: &Formats,
 ) -> Result<(), PQRSError> {
     let parquet_reader = SerializedFileReader::new(file.try_clone()?)?;
     let mut iter = parquet_reader.get_row_iter(None)?;
@@ -93,7 +159,7 @@ pub fn print_rows_random(
     let mut start: i64 = 0;
     while let Some(row) = iter.next() {
         if indexes.contains(&start) {
-            print_row(&row, json)
+            print_row(&row, format)
         }
         start += 1;
     }
@@ -133,8 +199,8 @@ impl Add for ParquetData {
 }
 
 /// Return the row batches, rows and schema for a given parquet file
-pub fn get_row_batches(input: &str) -> Result<ParquetData, PQRSError> {
-    let file = open_file(input)?;
+pub fn get_row_batches(file: File) -> Result<ParquetData, PQRSError> {
+    // let file = open_file(input)?;
     let file_reader = SerializedFileReader::new(file).unwrap();
     let mut arrow_reader = ParquetFileArrowReader::new(Arc::new(file_reader));
 
@@ -181,11 +247,11 @@ pub fn write_parquet(data: ParquetData, output: &str) -> Result<(), PQRSError> {
 }
 
 /// Print the given parquet rows in json or json-like format
-fn print_row(row: &Row, use_json: bool) {
-    if use_json {
-        println!("{}", row.to_json_value());
-    } else {
-        println!("{}", row.to_string());
+fn print_row(row: &Row, format: &Formats) {
+    match format {
+        Formats::Default => println!("{}", row.to_string()),
+        Formats::Csv => println!("Unsupported! {}", row.to_string()),
+        Formats::Json => println!("{}", row.to_json_value())
     }
 }
 

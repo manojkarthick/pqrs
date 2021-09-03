@@ -1,7 +1,7 @@
 use crate::command::PQRSCommand;
 use crate::errors::PQRSError;
 use crate::errors::PQRSError::FileNotFound;
-use crate::utils::{check_path_present, open_file, print_rows_random};
+use crate::utils::{check_path_present, open_file, print_rows_random, Formats};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use log::debug;
 use std::fmt;
@@ -9,7 +9,7 @@ use std::fmt;
 pub struct SampleCommand<'a> {
     file_name: &'a str,
     num_records: i64,
-    use_json: bool,
+    format: &'a Formats,
     randomize: bool,
 }
 
@@ -46,7 +46,11 @@ impl<'a> SampleCommand<'a> {
         Self {
             file_name: matches.value_of("file").unwrap(),
             num_records: matches.value_of("records").unwrap().parse().unwrap(),
-            use_json: matches.is_present("json"),
+            format: if matches.is_present("json") {
+                &Formats::Json
+            } else {
+                &Formats::Default
+            },
             randomize: true,
         }
     }
@@ -62,7 +66,7 @@ impl<'a> PQRSCommand for SampleCommand<'a> {
         }
 
         let file = open_file(self.file_name)?;
-        print_rows_random(file, self.num_records, self.use_json)?;
+        print_rows_random(file, self.num_records, self.format)?;
 
         Ok(())
     }
@@ -72,7 +76,7 @@ impl<'a> fmt::Debug for SampleCommand<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "The file name to read is: {}", &self.file_name)?;
         writeln!(f, "Number of records to print: {}", &self.num_records)?;
-        writeln!(f, "Use JSON Output format: {}", &self.use_json)?;
+        writeln!(f, "Use Output format: {}", self.format)?;
         writeln!(f, "Randomize output: {}", self.randomize)?;
 
         Ok(())
