@@ -107,9 +107,9 @@ impl<'a> PQRSCommand for CatCommand<'a> {
             let file = open_file(file_name)?;
             let info_string = format!("File: {}", file_name);
             let length = info_string.len();
-            println!("\n{}", "#".repeat(length));
-            println!("{}", info_string);
-            println!("{}\n", "#".repeat(length));
+            eprintln!("\n{}", "#".repeat(length));
+            eprintln!("{}", info_string);
+            eprintln!("{}\n", "#".repeat(length));
             print_rows(file, None, self.format)?;
         }
 
