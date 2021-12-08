@@ -11,11 +11,9 @@ static CAT_JSON_OUTPUT: &'static str = r#"{"continent":"Europe","country":{"name
 {"continent":"Europe","country":{"name":"Greece","city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"]}}
 {"continent":"North America","country":{"name":"Canada","city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"]}}
 "#;
-static CAT_CSV_OUTPUT: &'static str = r#"
-foo,bar
+static CAT_CSV_OUTPUT: &'static str = r#"foo,bar
 1,2
-10,20
-"#;
+10,20"#;
 static SCHEMA_OUTPUT: &'static str = r#"message hive_schema {
   OPTIONAL BYTE_ARRAY continent (UTF8);
   OPTIONAL group country {
@@ -81,7 +79,7 @@ mod integration {
         cmd.arg("cat").arg("data");
         cmd.assert()
             .success()
-            .stdout(predicate::str::contains("cities.parquet").and(
+            .stderr(predicate::str::contains("cities.parquet").and(
                 predicate::str::contains("simple.parquet").and(
                     predicate::str::contains("pems-1.snappy.parquet").and(
                         predicate::str::contains("pems-2.snappy.parquet")
