@@ -2,7 +2,7 @@
 
 * `pqrs` is a command line tool for inspecting [Parquet](https://parquet.apache.org/) files
 * This is a replacement for the [parquet-tools](https://github.com/apache/parquet-mr/tree/master/parquet-tools-deprecated) utility written in Rust
-* Built using the Rust implementation of [Parquet](https://github.com/apache/arrow/tree/master/rust/parquet) and [Arrow](https://github.com/apache/arrow/tree/master/rust/arrow)
+* Built using the Rust implementation of [Parquet](https://github.com/apache/arrow-rs/tree/master/parquet) and [Arrow](https://github.com/apache/arrow-rs/tree/master/arrow)
 * `pqrs` roughly means "parquet-tools in rust"
 
 
