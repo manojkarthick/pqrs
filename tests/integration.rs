@@ -165,6 +165,21 @@ mod integration {
     }
 
     #[test]
+    fn validate_schema_json() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("schema").arg("--json").arg(CITIES_PARQUET_PATH);
+        cmd.assert().success().stdout(
+            predicate::str::contains("version").and(
+                predicate::str::contains("num_rows")
+                    .and(predicate::str::contains("created_by"))
+                    .and(predicate::str::contains("message")),
+            ),
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn validate_uncompressed_size() -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = Command::cargo_bin("pqrs")?;
         cmd.arg("size").arg(PEMS_1_PARQUET_PATH);
