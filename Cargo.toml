@@ -12,16 +12,16 @@ keywords = ["cli", "arrow", "parquet"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-thiserror = "1.0.22"
-log = "0.4.11"
-env_logger = "0.8.2"
-parquet = { version = "4.3.0", features = ["cli"] }
-arrow = "4.3.0"
-clap = "2.33.3"
-rand = "0.8.3"
-tempfile = "3.2.0"
+thiserror = "1.0.30"
+log = "0.4.16"
+env_logger = "0.9.0"
+parquet = { version = "12.0.0", features = ["cli"] }
+arrow = { version = "12.0.0", features = ["chrono-tz"] }
+clap = "3.1.10"
+rand = "0.8.5"
 walkdir = "2.3.2"
 
 [dev-dependencies]
-assert_cmd = "1.0.3"
-predicates = "1.0.7"
+assert_cmd = "2.0.4"
+predicates = "2.1.1"
+tempfile = "3.3.0"

@@ -1,20 +1,20 @@
-static SIMPLE_PARQUET_PATH: &'static str = "data/simple.parquet";
-static CITIES_PARQUET_PATH: &'static str = "data/cities.parquet";
-static PEMS_1_PARQUET_PATH: &'static str = "data/pems-1.snappy.parquet";
-static PEMS_2_PARQUET_PATH: &'static str = "data/pems-2.snappy.parquet";
-static MERGED_FILE_NAME: &'static str = "merged.snappy.parquet";
-static CAT_OUTPUT: &'static str = r#"{continent: "Europe", country: {name: "France", city: ["Paris", "Nice", "Marseilles", "Cannes"]}}
+static SIMPLE_PARQUET_PATH: &str = "data/simple.parquet";
+static CITIES_PARQUET_PATH: &str = "data/cities.parquet";
+static PEMS_1_PARQUET_PATH: &str = "data/pems-1.snappy.parquet";
+static PEMS_2_PARQUET_PATH: &str = "data/pems-2.snappy.parquet";
+static MERGED_FILE_NAME: &str = "merged.snappy.parquet";
+static CAT_OUTPUT: &str = r#"{continent: "Europe", country: {name: "France", city: ["Paris", "Nice", "Marseilles", "Cannes"]}}
 {continent: "Europe", country: {name: "Greece", city: ["Athens", "Piraeus", "Hania", "Heraklion", "Rethymnon", "Fira"]}}
 {continent: "North America", country: {name: "Canada", city: ["Toronto", "Vancouver", "St. John's", "Saint John", "Montreal", "Halifax", "Winnipeg", "Calgary", "Saskatoon", "Ottawa", "Yellowknife"]}}
 "#;
-static CAT_JSON_OUTPUT: &'static str = r#"{"continent":"Europe","country":{"name":"France","city":["Paris","Nice","Marseilles","Cannes"]}}
+static CAT_JSON_OUTPUT: &str = r#"{"continent":"Europe","country":{"name":"France","city":["Paris","Nice","Marseilles","Cannes"]}}
 {"continent":"Europe","country":{"name":"Greece","city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"]}}
 {"continent":"North America","country":{"name":"Canada","city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"]}}
 "#;
-static CAT_CSV_OUTPUT: &'static str = r#"foo,bar
+static CAT_CSV_OUTPUT: &str = r#"foo,bar
 1,2
 10,20"#;
-static SCHEMA_OUTPUT: &'static str = r#"message hive_schema {
+static SCHEMA_OUTPUT: &str = r#"message hive_schema {
   OPTIONAL BYTE_ARRAY continent (UTF8);
   OPTIONAL group country {
     OPTIONAL BYTE_ARRAY name (UTF8);
@@ -25,16 +25,17 @@ static SCHEMA_OUTPUT: &'static str = r#"message hive_schema {
     }
   }
 }"#;
-static SAMPLE_PARTIAL_OUTPUT_1: &'static str = "{continent:";
-static SAMPLE_PARTIAL_OUTPUT_2: &'static str = "country: {name:";
+static SAMPLE_PARTIAL_OUTPUT_1: &str = "{continent:";
+static SAMPLE_PARTIAL_OUTPUT_2: &str = "country: {name:";
 
 /// Integration tests for the crate
 mod integration {
     // make sure any new commands added have a corresponding integration test here!
     use crate::{
-        CAT_JSON_OUTPUT, CAT_OUTPUT, CITIES_PARQUET_PATH, MERGED_FILE_NAME,
-        PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH, SAMPLE_PARTIAL_OUTPUT_1,
-        SAMPLE_PARTIAL_OUTPUT_2, SCHEMA_OUTPUT, SIMPLE_PARQUET_PATH, CAT_CSV_OUTPUT,
+        CAT_CSV_OUTPUT, CAT_JSON_OUTPUT, CAT_OUTPUT, CITIES_PARQUET_PATH,
+        MERGED_FILE_NAME, PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH,
+        SAMPLE_PARTIAL_OUTPUT_1, SAMPLE_PARTIAL_OUTPUT_2, SCHEMA_OUTPUT,
+        SIMPLE_PARQUET_PATH,
     };
     use assert_cmd::Command;
     use predicates::prelude::*;
@@ -77,15 +78,14 @@ mod integration {
     fn validate_cat_directory() -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = Command::cargo_bin("pqrs")?;
         cmd.arg("cat").arg("data");
-        cmd.assert()
-            .success()
-            .stderr(predicate::str::contains("cities.parquet").and(
+        cmd.assert().success().stderr(
+            predicate::str::contains("cities.parquet").and(
                 predicate::str::contains("simple.parquet").and(
-                    predicate::str::contains("pems-1.snappy.parquet").and(
-                        predicate::str::contains("pems-2.snappy.parquet")
-                    )
-                )
-            ));
+                    predicate::str::contains("pems-1.snappy.parquet")
+                        .and(predicate::str::contains("pems-2.snappy.parquet")),
+                ),
+            ),
+        );
 
         Ok(())
     }
@@ -93,7 +93,7 @@ mod integration {
     #[test]
     fn validate_head() -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = Command::cargo_bin("pqrs")?;
-        let lines: Vec<&str> = CAT_OUTPUT.split("\n").collect();
+        let lines: Vec<&str> = CAT_OUTPUT.split('\n').collect();
         cmd.arg("head").arg(CITIES_PARQUET_PATH).arg("-n").arg("1");
         cmd.assert()
             .success()

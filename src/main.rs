@@ -1,52 +1,53 @@
-use clap::AppSettings::ArgRequiredElseHelp;
-use clap::{crate_authors, crate_version, App, Arg};
-use env_logger::Env;
+use clap::{Parser, Subcommand};
 
 use crate::errors::PQRSError;
 
-mod command;
 mod commands;
 mod errors;
 mod utils;
 
+#[derive(Subcommand, Debug)]
+enum Commands {
+    Cat(commands::cat::CatCommandArgs),
+    Head(commands::head::HeadCommandArgs),
+    Merge(commands::merge::MergeCommandArgs),
+    #[clap(alias = "rowcount")]
+    RowCount(commands::rowcount::RowCountCommandArgs),
+    Sample(commands::sample::SampleCommandArgs),
+    Schema(commands::schema::SchemaCommandArgs),
+    Size(commands::size::SizeCommandArgs),
+}
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Show debug output
+    #[clap(short, long)]
+    debug: bool,
+
+    #[clap(subcommand)]
+    command: Commands,
+}
+
 fn main() -> Result<(), PQRSError> {
-    let matches = App::new("pqrs")
-        .version(crate_version!())
-        .author(crate_authors!())
-        .about("Apache Parquet command-line utility")
-        .setting(ArgRequiredElseHelp)
-        .arg(
-            Arg::with_name("debug")
-                .short("d")
-                .long("debug")
-                .takes_value(false)
-                .global(true)
-                .help("Show debug output"),
-        )
-        .subcommands(vec![
-            commands::cat::CatCommand::command(),
-            commands::schema::SchemaCommand::command(),
-            commands::head::HeadCommand::command(),
-            commands::rowcount::RowCountCommand::command(),
-            commands::size::SizeCommand::command(),
-            commands::sample::SampleCommand::command(),
-            commands::merge::MergeCommand::command(),
-        ])
-        .get_matches();
+    let args = Args::parse();
 
-    // initialize logger for the app and set logging level to info if no environment variable present
-    let mut env = Env::default();
-    // if --debug flag is used, then set logging level to debug
-    if matches.is_present("debug") {
-        env = env.default_filter_or("debug");
-    } else {
-        env = env.default_filter_or("info");
+    if args.debug {
+        std::env::set_var("RUST_LOG", "debug");
     }
+    env_logger::init();
 
-    env_logger::Builder::from_env(env).init();
+    log::debug!("args: {:?}", args);
 
-    // run the right subcommand
-    command::run_command(matches)?;
+    match args.command {
+        Commands::Cat(opts) => commands::cat::execute(opts)?,
+        Commands::Head(opts) => commands::head::execute(opts)?,
+        Commands::Merge(opts) => commands::merge::execute(opts)?,
+        Commands::RowCount(opts) => commands::rowcount::execute(opts)?,
+        Commands::Sample(opts) => commands::sample::execute(opts)?,
+        Commands::Schema(opts) => commands::schema::execute(opts)?,
+        Commands::Size(opts) => commands::size::execute(opts)?,
+    }
 
     Ok(())
 }
