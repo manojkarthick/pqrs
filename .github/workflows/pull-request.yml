@@ -1,0 +1,28 @@
+name: build
+
+on: [pull_request]
+
+jobs:
+  job_on_push:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+
+      - name: Install latest rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          override: true
+
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+      - name: Check compilation
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
