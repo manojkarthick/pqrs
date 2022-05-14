@@ -1,0 +1,79 @@
+environment:
+  properties:
+    artifactsDir: out/jreleaser/assemble/pqrs/archive
+
+project:
+  name: pqrs
+  description: Apache Parquet command-line tools and utilities
+  longDescription: Command line tool for reading and inspecting Parquet files and their schemas
+  website: https://github.com/manojkarthick/pqrs
+  authors:
+    - Manoj Karthick
+  license: MIT
+  extraProperties:
+    inceptionYear: 2021
+
+platform:
+  replacements:
+    'osx-x86_64': 'x86_64-apple-darwin'
+    'osx-aarch_64': 'aarch64-apple-darwin'
+    'linux-x86_64': 'x86_64-unknown-linux-gnu'
+    'linux-aarch_64': 'aarch64-unknown-linux-gnu'
+    'windows-x86_64': 'x86_64-pc-windows-msvc'
+
+release:
+  github:
+    name: pqrs
+    overwrite: true
+    branch: master
+    changelog:
+      formatted: ALWAYS
+      format: '- {{commitShortHash}} {{commitTitle}}'
+      preset: conventional-commits
+      contributors:
+        enabled: false
+
+assemble:
+  archive:
+    pqrs:
+      active: ALWAYS
+      formats:
+        - ZIP
+      attachPlatform: true
+      fileSets:
+        - input: 'target/{{ osPlatformReplaced }}/release'
+          output: 'bin'
+          includes: [ 'pqrs{.exe,}' ]
+        - input: '.'
+          includes: [ 'LICENSE' ]
+
+distributions:
+  pqrs:
+    type: BINARY
+    executableExtension: exe
+    artifacts:
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-x86_64-apple-darwin.zip'
+        platform: 'osx-x86_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-aarch64-apple-darwin.zip'
+        platform: 'osx-aarch_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-x86_64-unknown-linux-gnu.zip'
+        platform: 'linux-x86_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-aarch64-unknown-linux-gnu.zip'
+        platform: 'linux-aarch_64'
+      - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-x86_64-pc-windows-msvc.zip'
+        platform: 'windows-x86_64'
+
+packagers:
+  brew:
+    active: ALWAYS
+    continueOnError: false
+    formulaName: Pqrs
+    multiPlatform: true
+    commitAuthor:
+      name: jreleaserbot
+      email: jreleaser@kordamp.org
+    tap:
+      active: ALWAYS
+      owner: manojkarthick
+      name: homebrew-tap
+      username: manojkarthick

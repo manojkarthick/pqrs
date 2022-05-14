@@ -1,0 +1,155 @@
+name: Release
+
+# Build on every semantic versioned tag
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  precheck:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.vars.outputs.VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Version
+        id: vars
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)
+          echo ::set-output name=VERSION::$(echo "$version")
+
+  build:
+    name: 'Build ${{ matrix.job.target }}'
+    needs: [ precheck ]
+    strategy:
+      fail-fast: true
+      matrix:
+        job:
+          - { target: aarch64-apple-darwin        , os: macos-11     ,                  jreleaser_platform: osx-aarch_64   }
+          - { target: x86_64-apple-darwin         , os: macos-11     ,                  jreleaser_platform: osx-x86_64     }
+          - { target: x86_64-pc-windows-msvc      , os: windows-2019 ,                  jreleaser_platform: windows-x86_64 }
+          - { target: x86_64-unknown-linux-gnu    , os: ubuntu-20.04 ,                  jreleaser_platform: linux-x86_64   }
+          - { target: aarch64-unknown-linux-gnu   , os: ubuntu-20.04 , use-cross: true, jreleaser_platform: linux-aarch_64 }
+    runs-on: ${{ matrix.job.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Configure the Rust toolchain
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.job.target }}
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.job.use-cross }}
+          command: build
+          args: --locked --release --target=${{ matrix.job.target }}
+
+      # Assemble the zipball
+      - name: Assemble
+        uses: jreleaser/release-action@v2
+        with:
+          version: early-access
+          arguments: assemble
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_PLATFORM_OVERRIDE: ${{ matrix.job.jreleaser_platform }}
+          JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.JRELEASER_HOMEBREW_GITHUB_TOKEN }}
+
+      # Upload archive
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          retention-days: 1
+          name: artifacts
+          path: |
+            out/jreleaser/assemble/pqrs/archive/*.zip
+
+      - name: JReleaser output
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: jreleaser-output-${{ matrix.job.target }}
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
+
+  release:
+    needs: [ precheck, build ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+
+      - name: Release
+        uses: jreleaser/release-action@v2
+        with:
+          version: early-access
+          arguments: full-release -PartifactsDir=artifacts -PskipArchiveResolver
+        env:
+          JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.VERSION }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.JRELEASER_HOMEBREW_GITHUB_TOKEN }}
+
+      - name: JReleaser output
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: output-release-logs
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
+
+  universal:
+    needs: [ precheck, release ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log in to Docker hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      -
+        name: Build and push universal binary
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: manojkarthick/macos-universal-binary-action@v0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          owner: "manojkarthick"
+          repository: "pqrs"
+          tag: "latest"
+          amd64: "x86_64-apple-darwin"
+          arm64: "aarch64-apple-darwin"
+          compressed: "true"
+          overwrite: "true"
+          universal-identifier: "all"

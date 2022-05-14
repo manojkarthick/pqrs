@@ -1,6 +1,6 @@
 [package]
 name = "pqrs"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Manoj Karthick"]
 description = "Apache Parquet command-line tools and utilities"
 edition = "2018"
