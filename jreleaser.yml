@@ -50,7 +50,8 @@ assemble:
 distributions:
   pqrs:
     type: BINARY
-    executableExtension: exe
+    executable:
+      windowsExtension: exe
     artifacts:
       - path: '{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-x86_64-apple-darwin.zip'
         platform: 'osx-x86_64'
