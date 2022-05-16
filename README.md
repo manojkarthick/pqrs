@@ -19,9 +19,10 @@ You can download release binaries [here](https://github.com/manojkarthick/pqrs/r
 For macOS users, `pqrs` is available as a homebrew tap.
 
 ```shell
-brew tap manojkarthick/pqrs
-brew install pqrs
+brew install manojkarthick/tap/pqrs
 ```
+NOTE: For users upgrading from v0.2 or prior, note that the location of the `pqrs` homebrew tap has been updated.
+To update to v0.2.1+, please uninstall using `brew uninstall pqrs` and use the above command to re-install.
 
 #### Using cargo
 
