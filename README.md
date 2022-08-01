@@ -74,7 +74,7 @@ SUBCOMMANDS:
 ### Subcommand: cat
 
 Prints the contents of the given files and folders. Recursively traverses and prints all the files if the input is a directory. 
-Supports json-like, json or CSV format. Use `--json` for JSON output and `--csv` for CSV output.
+Supports json-like, json or CSV format. Use `--json` for JSON output, `--csv` for CSV output with column names in the first row, and `--csv-data-only` for CSV output without the column names row.
 
 ```shell
 ❯ pqrs cat data/cities.parquet
@@ -93,6 +93,12 @@ Supports json-like, json or CSV format. Use `--json` for JSON output and `--csv`
 ```shell
 ❯ pqrs cat data/simple.parquet --csv
 foo,bar
+1,2
+10,20
+```
+
+```shell
+❯ pqrs cat data/simple.parquet --csv-no-header
 1,2
 10,20
 ```

@@ -13,11 +13,15 @@ use walkdir::WalkDir;
 #[derive(Parser, Debug)]
 pub struct CatCommandArgs {
     /// Use CSV format for printing
-    #[clap(short, long, conflicts_with = "json")]
+    #[clap(short, long, conflicts_with_all = &["csv-no-header","json"])]
     csv: bool,
 
+    /// Use CSV format without a header for printing
+    #[clap(long = "csv-no-header", conflicts_with_all = &["csv","json"])]
+    csv_no_header: bool,
+
     /// Use JSON lines format for printing
-    #[clap(short, long, conflicts_with = "csv")]
+    #[clap(short, long, conflicts_with_all = &["csv", "csv-no-header"])]
     json: bool,
 
     /// Parquet files or folders to read from
@@ -29,6 +33,8 @@ pub(crate) fn execute(opts: CatCommandArgs) -> Result<(), PQRSError> {
         Formats::Json
     } else if opts.csv {
         Formats::Csv
+    } else if opts.csv_no_header {
+        Formats::CsvNoHeader
     } else {
         Formats::Default
     };

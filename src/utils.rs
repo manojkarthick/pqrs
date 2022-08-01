@@ -26,6 +26,7 @@ static ONE_PI_B: i64 = ONE_TI_B * 1024;
 pub enum Formats {
     Default,
     Csv,
+    CsvNoHeader,
     Json,
 }
 
@@ -118,6 +119,31 @@ pub fn print_rows(
             let mut arrow_reader = ParquetFileArrowReader::new(parquet_reader);
             let batch_reader = arrow_reader.get_record_reader(8192)?;
             let mut writer = arrow::csv::Writer::new(std::io::stdout());
+
+            for maybe_batch in batch_reader {
+                if left == Some(0) {
+                    break;
+                }
+
+                let mut batch = maybe_batch?;
+                if let Some(l) = left {
+                    if batch.num_rows() <= l {
+                        left = Some(l - batch.num_rows());
+                    } else {
+                        let n = min(batch.num_rows(), l);
+                        batch = batch.slice(0, n);
+                        left = Some(0);
+                    }
+                };
+
+                writer.write(&batch)?;
+            }
+        }
+        Formats::CsvNoHeader => {
+            let mut arrow_reader = ParquetFileArrowReader::new(parquet_reader);
+            let batch_reader = arrow_reader.get_record_reader(8192)?;
+            let writer_builder = arrow::csv::WriterBuilder::new().has_headers(false);
+            let mut writer = writer_builder.build(std::io::stdout());
 
             for maybe_batch in batch_reader {
                 if left == Some(0) {
@@ -263,6 +289,7 @@ fn print_row(row: &Row, format: Formats) {
     match format {
         Formats::Default => println!("{}", row),
         Formats::Csv => println!("Unsupported! {}", row),
+        Formats::CsvNoHeader => println!("Unsupported! {}", row),
         Formats::Json => println!("{}", row.to_json_value()),
     }
 }
