@@ -14,6 +14,8 @@ static CAT_JSON_OUTPUT: &str = r#"{"continent":"Europe","country":{"name":"Franc
 static CAT_CSV_OUTPUT: &str = r#"foo,bar
 1,2
 10,20"#;
+static CAT_CSV_NO_HEADER_OUTPUT: &str = r#"1,2
+10,20"#;
 static SCHEMA_OUTPUT: &str = r#"message hive_schema {
   OPTIONAL BYTE_ARRAY continent (UTF8);
   OPTIONAL group country {
@@ -32,8 +34,8 @@ static SAMPLE_PARTIAL_OUTPUT_2: &str = "country: {name:";
 mod integration {
     // make sure any new commands added have a corresponding integration test here!
     use crate::{
-        CAT_CSV_OUTPUT, CAT_JSON_OUTPUT, CAT_OUTPUT, CITIES_PARQUET_PATH,
-        MERGED_FILE_NAME, PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH,
+        CAT_CSV_NO_HEADER_OUTPUT, CAT_CSV_OUTPUT, CAT_JSON_OUTPUT, CAT_OUTPUT,
+        CITIES_PARQUET_PATH, MERGED_FILE_NAME, PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH,
         SAMPLE_PARTIAL_OUTPUT_1, SAMPLE_PARTIAL_OUTPUT_2, SCHEMA_OUTPUT,
         SIMPLE_PARQUET_PATH,
     };
@@ -70,6 +72,19 @@ mod integration {
         cmd.assert()
             .success()
             .stdout(predicate::str::contains(CAT_CSV_OUTPUT));
+
+        Ok(())
+    }
+
+    #[test]
+    fn validate_cat_csv_no_header() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat")
+            .arg(SIMPLE_PARQUET_PATH)
+            .arg("--csv-no-header");
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::starts_with(CAT_CSV_NO_HEADER_OUTPUT));
 
         Ok(())
     }
