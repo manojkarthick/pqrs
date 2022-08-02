@@ -81,7 +81,8 @@ mod integration {
         let mut cmd = Command::cargo_bin("pqrs")?;
         cmd.arg("cat")
             .arg(SIMPLE_PARQUET_PATH)
-            .arg("--csv-no-header");
+            .arg("--csv")
+            .arg("--no-header");
         cmd.assert()
             .success()
             .stdout(predicate::str::starts_with(CAT_CSV_NO_HEADER_OUTPUT));

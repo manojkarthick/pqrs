@@ -98,7 +98,7 @@ foo,bar
 ```
 
 ```shell
-❯ pqrs cat data/simple.parquet --csv-no-header
+❯ pqrs cat data/simple.parquet --csv --no-header
 1,2
 10,20
 ```
