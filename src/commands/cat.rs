@@ -17,7 +17,7 @@ pub struct CatCommandArgs {
     csv: bool,
 
     /// Use CSV format without a header for printing
-    #[clap(long = "csv-no-header", conflicts_with_all = &["csv","json"])]
+    #[clap(long = "no-header", requires = "csv", conflicts_with = "json")]
     csv_no_header: bool,
 
     /// Use JSON lines format for printing
@@ -31,6 +31,8 @@ pub struct CatCommandArgs {
 pub(crate) fn execute(opts: CatCommandArgs) -> Result<(), PQRSError> {
     let format = if opts.json {
         Formats::Json
+    } else if opts.csv_no_header {
+        Formats::CsvNoHeader
     } else if opts.csv {
         Formats::Csv
     } else if opts.csv_no_header {

@@ -1,10 +1,9 @@
 # pqrs ![build](https://github.com/manojkarthick/pqrs/workflows/build/badge.svg)
 
-* `pqrs` is a command line tool for inspecting [Parquet](https://parquet.apache.org/) files
-* This is a replacement for the [parquet-tools](https://github.com/apache/parquet-mr/tree/master/parquet-tools-deprecated) utility written in Rust
-* Built using the Rust implementation of [Parquet](https://github.com/apache/arrow-rs/tree/master/parquet) and [Arrow](https://github.com/apache/arrow-rs/tree/master/arrow)
-* `pqrs` roughly means "parquet-tools in rust"
-
+- `pqrs` is a command line tool for inspecting [Parquet](https://parquet.apache.org/) files
+- This is a replacement for the [parquet-tools](https://github.com/apache/parquet-mr/tree/master/parquet-tools-deprecated) utility written in Rust
+- Built using the Rust implementation of [Parquet](https://github.com/apache/arrow-rs/tree/master/parquet) and [Arrow](https://github.com/apache/arrow-rs/tree/master/arrow)
+- `pqrs` roughly means "parquet-tools in rust"
 
 ## Installation
 
@@ -21,6 +20,7 @@ For macOS users, `pqrs` is available as a homebrew tap.
 ```shell
 brew install manojkarthick/tap/pqrs
 ```
+
 NOTE: For users upgrading from v0.2 or prior, note that the location of the `pqrs` homebrew tap has been updated.
 To update to v0.2.1+, please uninstall using `brew uninstall pqrs` and use the above command to re-install.
 
@@ -73,7 +73,7 @@ SUBCOMMANDS:
 
 ### Subcommand: cat
 
-Prints the contents of the given files and folders. Recursively traverses and prints all the files if the input is a directory. 
+Prints the contents of the given files and folders. Recursively traverses and prints all the files if the input is a directory.
 Supports json-like, json or CSV format. Use `--json` for JSON output, `--csv` for CSV output with column names in the first row, and `--csv-data-only` for CSV output without the column names row.
 
 ```shell
@@ -98,7 +98,7 @@ foo,bar
 ```
 
 ```shell
-❯ pqrs cat data/simple.parquet --csv-no-header
+❯ pqrs cat data/simple.parquet --csv --no-header
 1,2
 10,20
 ```
@@ -213,7 +213,7 @@ statistics: {min: [69, 117, 114, 111, 112, 101], max: [78, 111, 114, 116, 104, 3
 ```
 
 ```shell
-❯ pqrs schema --json data/cities.parquet                                                              
+❯ pqrs schema --json data/cities.parquet
 {"version":1,"num_rows":3,"created_by":"parquet-mr version 1.5.0-cdh5.7.0 (build ${buildNumber})","metadata":null,"columns":[{"optional":"true","physical_type":"BYTE_ARRAY","name":"continent","path":"continent","converted_type":"UTF8"},{"name":"name","converted_type":"UTF8","path":"country.name","physical_type":"BYTE_ARRAY","optional":"true"},{"optional":"true","name":"array_element","physical_type":"BYTE_ARRAY","path":"country.city.bag.array_element","converted_type":"UTF8"}],"message":"message hive_schema {\n  OPTIONAL BYTE_ARRAY continent (UTF8);\n  OPTIONAL group country {\n    OPTIONAL BYTE_ARRAY name (UTF8);\n    OPTIONAL group city (LIST) {\n      REPEATED group bag {\n        OPTIONAL BYTE_ARRAY array_element (UTF8);\n      }\n    }\n  }\n}\n"}
 
 ```
@@ -238,8 +238,6 @@ File Name: data/pems-1.snappy.parquet
 Compressed Size: 12 KiB
 ```
 
-
-
 ### TODO
 
-* [ ] Test on Windows
+- [ ] Test on Windows
