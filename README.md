@@ -1,9 +1,9 @@
 # pqrs ![build](https://github.com/manojkarthick/pqrs/workflows/build/badge.svg)
 
-- `pqrs` is a command line tool for inspecting [Parquet](https://parquet.apache.org/) files
-- This is a replacement for the [parquet-tools](https://github.com/apache/parquet-mr/tree/master/parquet-tools-deprecated) utility written in Rust
-- Built using the Rust implementation of [Parquet](https://github.com/apache/arrow-rs/tree/master/parquet) and [Arrow](https://github.com/apache/arrow-rs/tree/master/arrow)
-- `pqrs` roughly means "parquet-tools in rust"
+* `pqrs` is a command line tool for inspecting [Parquet](https://parquet.apache.org/) files
+* This is a replacement for the [parquet-tools](https://github.com/apache/parquet-mr/tree/master/parquet-tools-deprecated) utility written in Rust
+* Built using the Rust implementation of [Parquet](https://github.com/apache/arrow-rs/tree/master/parquet) and [Arrow](https://github.com/apache/arrow-rs/tree/master/arrow)
+* `pqrs` roughly means "parquet-tools in rust"
 
 ## Installation
 
@@ -240,4 +240,4 @@ Compressed Size: 12 KiB
 
 ### TODO
 
-- [ ] Test on Windows
+* [ ] Test on Windows
