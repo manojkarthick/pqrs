@@ -93,7 +93,7 @@ pub(crate) fn execute(opts: SchemaCommandArgs) -> Result<(), PQRSError> {
                     let schema = ParquetSchema {
                         version: metadata.file_metadata().version(),
                         num_rows: metadata.file_metadata().num_rows(),
-                        created_by: metadata.file_metadata().created_by().clone(),
+                        created_by: metadata.file_metadata().created_by().map(|x| x.into()),
                         metadata: get_schema_metadata(metadata),
                         columns: get_column_information(metadata),
                         message: get_message(metadata)?,
