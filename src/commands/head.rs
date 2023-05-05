@@ -9,15 +9,15 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 pub struct HeadCommandArgs {
     /// Use CSV format for printing
-    #[clap(short, long, conflicts_with = "json")]
+    #[arg(short, long, conflicts_with = "json")]
     csv: bool,
 
     /// Use JSON lines format for printing
-    #[clap(short, long, conflicts_with = "csv")]
+    #[arg(short, long, conflicts_with = "csv")]
     json: bool,
 
     /// The number of records to show (default: 5)
-    #[clap(short = 'n', long, default_value = "5")]
+    #[arg(short = 'n', long, default_value = "5")]
     records: usize,
 
     /// Parquet file to read

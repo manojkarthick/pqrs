@@ -1,26 +1,28 @@
-use std::collections::HashMap;
-use std::io::BufWriter;
 use crate::errors::PQRSError;
 use crate::errors::PQRSError::FileNotFound;
 use crate::utils::{check_path_present, open_file};
 use clap::Parser;
 use log::debug;
+use parquet::file::metadata::ParquetMetaData;
 use parquet::file::reader::FileReader;
 use parquet::file::serialized_reader::SerializedFileReader;
-use parquet::schema::printer::{print_file_metadata, print_parquet_metadata, print_schema};
+use parquet::schema::printer::{
+    print_file_metadata, print_parquet_metadata, print_schema,
+};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::io::BufWriter;
 use std::path::PathBuf;
-use parquet::file::metadata::ParquetMetaData;
-use serde::{Serialize, Deserialize};
 
 /// Prints the schema of Parquet file(s)
 #[derive(Parser, Debug)]
 pub struct SchemaCommandArgs {
     /// Enable printing full file metadata
-    #[clap(short = 'D', long)]
+    #[arg(short = 'D', long)]
     detailed: bool,
 
     /// Print in JSON format
-    #[clap(short, long, conflicts_with = "detailed")]
+    #[arg(short, long, conflicts_with = "detailed")]
     json: bool,
 
     /// Parquet files to read
@@ -38,9 +40,11 @@ pub struct ParquetSchema {
     message: String,
 }
 
-fn get_schema_metadata(metadata: &ParquetMetaData) -> Option<HashMap<String, Option<String>>> {
+fn get_schema_metadata(
+    metadata: &ParquetMetaData,
+) -> Option<HashMap<String, Option<String>>> {
     if let Some(metadata) = metadata.file_metadata().key_value_metadata() {
-        let mut fields : HashMap<String, Option<String>> = HashMap::new();
+        let mut fields: HashMap<String, Option<String>> = HashMap::new();
         for kv in metadata.iter() {
             fields.insert(kv.key.to_string(), kv.value.to_owned());
         }
@@ -50,16 +54,25 @@ fn get_schema_metadata(metadata: &ParquetMetaData) -> Option<HashMap<String, Opt
     }
 }
 
-fn get_column_information(metadata: &ParquetMetaData) -> Vec<HashMap<String, String>>{
+fn get_column_information(metadata: &ParquetMetaData) -> Vec<HashMap<String, String>> {
     let schema = metadata.file_metadata().schema_descr();
     let mut columns = Vec::new();
     for (_i, col) in schema.columns().iter().enumerate() {
         let mut column_info: HashMap<String, String> = HashMap::new();
         column_info.insert(String::from("name"), String::from(col.name()));
         column_info.insert(String::from("path"), col.path().string());
-        column_info.insert(String::from("optional"), col.self_type().is_optional().to_string());
-        column_info.insert(String::from("physical_type"), col.physical_type().to_string());
-        column_info.insert(String::from("converted_type"), col.converted_type().to_string());
+        column_info.insert(
+            String::from("optional"),
+            col.self_type().is_optional().to_string(),
+        );
+        column_info.insert(
+            String::from("physical_type"),
+            col.physical_type().to_string(),
+        );
+        column_info.insert(
+            String::from("converted_type"),
+            col.converted_type().to_string(),
+        );
         columns.push(column_info)
     }
     columns
@@ -93,7 +106,10 @@ pub(crate) fn execute(opts: SchemaCommandArgs) -> Result<(), PQRSError> {
                     let schema = ParquetSchema {
                         version: metadata.file_metadata().version(),
                         num_rows: metadata.file_metadata().num_rows(),
-                        created_by: metadata.file_metadata().created_by().clone(),
+                        created_by: metadata
+                            .file_metadata()
+                            .created_by()
+                            .map(|str| str.to_string()),
                         metadata: get_schema_metadata(metadata),
                         columns: get_column_information(metadata),
                         message: get_message(metadata)?,
@@ -106,7 +122,10 @@ pub(crate) fn execute(opts: SchemaCommandArgs) -> Result<(), PQRSError> {
                     if opts.detailed {
                         print_parquet_metadata(&mut std::io::stdout(), metadata);
                     } else {
-                        print_file_metadata(&mut std::io::stdout(), metadata.file_metadata());
+                        print_file_metadata(
+                            &mut std::io::stdout(),
+                            metadata.file_metadata(),
+                        );
                     }
                 }
             }

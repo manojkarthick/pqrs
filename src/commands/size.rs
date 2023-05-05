@@ -9,11 +9,11 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 pub struct SizeCommandArgs {
     /// Show pretty, human readable size
-    #[clap(short, long)]
+    #[arg(short, long)]
     pretty: bool,
 
     /// Show compressed size
-    #[clap(short, long)]
+    #[arg(short, long)]
     compressed: bool,
 
     /// Parquet files to read

@@ -9,11 +9,11 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 pub struct SampleCommandArgs {
     /// Use JSON lines format for printing
-    #[clap(short, long)]
+    #[arg(short, long)]
     json: bool,
 
     /// The number of records to sample
-    #[clap(short = 'n', long)]
+    #[arg(short = 'n', long)]
     records: usize,
 
     /// Parquet file to read
