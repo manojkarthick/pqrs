@@ -7,9 +7,9 @@ static CAT_OUTPUT: &str = r#"{continent: "Europe", country: {name: "France", cit
 {continent: "Europe", country: {name: "Greece", city: ["Athens", "Piraeus", "Hania", "Heraklion", "Rethymnon", "Fira"]}}
 {continent: "North America", country: {name: "Canada", city: ["Toronto", "Vancouver", "St. John's", "Saint John", "Montreal", "Halifax", "Winnipeg", "Calgary", "Saskatoon", "Ottawa", "Yellowknife"]}}
 "#;
-static CAT_JSON_OUTPUT: &str = r#"{"continent":"Europe","country":{"name":"France","city":["Paris","Nice","Marseilles","Cannes"]}}
-{"continent":"Europe","country":{"name":"Greece","city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"]}}
-{"continent":"North America","country":{"name":"Canada","city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"]}}
+static CAT_JSON_OUTPUT: &str = r#"{"continent":"Europe","country":{"city":["Paris","Nice","Marseilles","Cannes"],"name":"France"}}
+{"continent":"Europe","country":{"city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"],"name":"Greece"}}
+{"continent":"North America","country":{"city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"],"name":"Canada"}}
 "#;
 static CAT_CSV_OUTPUT: &str = r#"foo,bar
 1,2

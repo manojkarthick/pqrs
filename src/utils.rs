@@ -2,7 +2,7 @@ use crate::errors::PQRSError;
 use crate::errors::PQRSError::CouldNotOpenFile;
 use arrow::{datatypes::Schema, record_batch::RecordBatch};
 use log::debug;
-use parquet::arrow::{ArrowReader, ArrowWriter, ParquetFileArrowReader};
+use parquet::arrow::{arrow_reader::ArrowReaderBuilder, ArrowWriter};
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::record::Row;
 use rand::seq::SliceRandom;
@@ -45,7 +45,7 @@ pub fn check_path_present<P: AsRef<Path>>(file_path: P) -> bool {
 pub fn open_file<P: AsRef<Path>>(file_name: P) -> Result<File, PQRSError> {
     let file_name = file_name.as_ref();
     let path = Path::new(file_name);
-    let file = match File::open(&path) {
+    let file = match File::open(path) {
         Err(_) => return Err(CouldNotOpenFile(file_name.to_path_buf())),
         Ok(f) => f,
     };
@@ -68,12 +68,11 @@ pub fn print_rows(
     num_records: Option<usize>,
     format: Formats,
 ) -> Result<(), PQRSError> {
-    let parquet_reader = Arc::new(SerializedFileReader::new(file)?);
-
     let mut left = num_records;
 
     match format {
         Formats::Default => {
+            let parquet_reader = SerializedFileReader::new(file)?;
             let mut iter = parquet_reader.get_row_iter(None)?;
 
             let mut start: usize = 0;
@@ -90,8 +89,8 @@ pub fn print_rows(
             }
         }
         Formats::Json => {
-            let mut arrow_reader = ParquetFileArrowReader::new(parquet_reader);
-            let batch_reader = arrow_reader.get_record_reader(8192)?;
+            let arrow_reader = ArrowReaderBuilder::try_new(file)?;
+            let batch_reader = arrow_reader.with_batch_size(8192).build()?;
             let mut writer = arrow::json::LineDelimitedWriter::new(std::io::stdout());
 
             for maybe_batch in batch_reader {
@@ -116,8 +115,8 @@ pub fn print_rows(
             writer.finish()?;
         }
         Formats::Csv => {
-            let mut arrow_reader = ParquetFileArrowReader::new(parquet_reader);
-            let batch_reader = arrow_reader.get_record_reader(8192)?;
+            let arrow_reader = ArrowReaderBuilder::try_new(file)?;
+            let batch_reader = arrow_reader.with_batch_size(8192).build()?;
             let mut writer = arrow::csv::Writer::new(std::io::stdout());
 
             for maybe_batch in batch_reader {
@@ -140,8 +139,8 @@ pub fn print_rows(
             }
         }
         Formats::CsvNoHeader => {
-            let mut arrow_reader = ParquetFileArrowReader::new(parquet_reader);
-            let batch_reader = arrow_reader.get_record_reader(8192)?;
+            let arrow_reader = ArrowReaderBuilder::try_new(file)?;
+            let batch_reader = arrow_reader.with_batch_size(8192).build()?;
             let writer_builder = arrow::csv::WriterBuilder::new().has_headers(false);
             let mut writer = writer_builder.build(std::io::stdout());
 
@@ -235,12 +234,10 @@ impl Add for ParquetData {
 
 /// Return the row batches, rows and schema for a given parquet file
 pub fn get_row_batches(file: File) -> Result<ParquetData, PQRSError> {
-    // let file = open_file(input)?;
-    let file_reader = SerializedFileReader::new(file).unwrap();
-    let mut arrow_reader = ParquetFileArrowReader::new(Arc::new(file_reader));
+    let arrow_reader = ArrowReaderBuilder::try_new(file)?;
 
-    let schema = arrow_reader.get_schema()?;
-    let record_batch_reader = arrow_reader.get_record_reader(1024)?;
+    let schema = Schema::clone(arrow_reader.schema());
+    let record_batch_reader = arrow_reader.with_batch_size(1024).build()?;
     let mut batches: Vec<RecordBatch> = Vec::new();
 
     let mut rows = 0;
@@ -351,5 +348,5 @@ pub fn get_pretty_size(bytes: i64) -> String {
         return format!("{:.3} TiB", bytes / ONE_TI_B);
     }
 
-    return format!("{:.3} PiB", bytes / ONE_PI_B);
+    format!("{:.3} PiB", bytes / ONE_PI_B)
 }

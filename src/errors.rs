@@ -1,12 +1,12 @@
 use arrow::error::ArrowError;
 use parquet::errors::ParquetError;
+use serde_json::Error as SerdeJsonError;
 use std::io;
 use std::io::{BufWriter, IntoInnerError};
 use std::num::ParseIntError;
 use std::path::PathBuf;
 use std::string::FromUtf8Error;
 use thiserror::Error;
-use serde_json::Error as SerdeJsonError;
 
 #[allow(dead_code)]
 #[derive(Error, Debug)]
@@ -32,6 +32,5 @@ pub enum PQRSError {
     #[error("Could not create string from UTF8 bytes")]
     UTF8ConvertError(#[from] FromUtf8Error),
     #[error("Could not read/write to buffer")]
-    BufferWriteError(#[from] IntoInnerError<BufWriter<Vec<u8>>>)
-
+    BufferWriteError(#[from] IntoInnerError<BufWriter<Vec<u8>>>),
 }

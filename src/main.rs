@@ -11,7 +11,7 @@ enum Commands {
     Cat(commands::cat::CatCommandArgs),
     Head(commands::head::HeadCommandArgs),
     Merge(commands::merge::MergeCommandArgs),
-    #[clap(alias = "rowcount")]
+    #[command(alias = "rowcount")]
     RowCount(commands::rowcount::RowCountCommandArgs),
     Sample(commands::sample::SampleCommandArgs),
     Schema(commands::schema::SchemaCommandArgs),
@@ -19,13 +19,13 @@ enum Commands {
 }
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 struct Args {
     /// Show debug output
-    #[clap(short, long)]
+    #[arg(short, long)]
     debug: bool,
 
-    #[clap(subcommand)]
+    #[command(subcommand)]
     command: Commands,
 }
 

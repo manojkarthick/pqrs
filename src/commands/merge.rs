@@ -10,11 +10,11 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 pub struct MergeCommandArgs {
     /// Parquet files to read
-    #[clap(short, long, value_delimiter = ' ', multiple_values = true)]
+    #[arg(short, long, value_delimiter = ' ', num_args = 1..)]
     input: Vec<PathBuf>,
 
     /// Parquet file to write
-    #[clap(short, long)]
+    #[arg(short, long)]
     output: PathBuf,
 }
 
