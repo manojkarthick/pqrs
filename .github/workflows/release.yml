@@ -107,7 +107,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download artifacts
-        uses: actions/download-artifact@v31`
+        uses: actions/download-artifact@v3
 
       - name: Release
         uses: jreleaser/release-action@v2
