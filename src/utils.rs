@@ -109,7 +109,7 @@ pub fn print_rows(
                     }
                 };
 
-                writer.write(batch)?;
+                writer.write(&batch)?;
             }
 
             writer.finish()?;

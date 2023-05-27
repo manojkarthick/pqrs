@@ -1,6 +1,6 @@
 [package]
 name = "pqrs"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Manoj Karthick"]
 description = "Apache Parquet command-line tools and utilities"
 edition = "2018"
@@ -15,9 +15,8 @@ categories = ["command-line-utilities"]
 thiserror = "1.0.30"
 log = "0.4.16"
 env_logger = "0.9.0"
-# TODO: Update `parquet` and `arrow` to `40.0.0` when they are released
-parquet = { git = "https://github.com/apache/arrow-rs.git", rev = "0e9bdd651fffff155f6c38be692e4242d7f58577", features = ["cli"] }
-arrow = { git = "https://github.com/apache/arrow-rs.git", rev = "0e9bdd651fffff155f6c38be692e4242d7f58577", features = ["chrono-tz"] }
+parquet = { version = "40.0.0", features = ["cli"] }
+arrow = { version = "40.0.0", features = ["chrono-tz"] }
 clap = { version = "4.2.7", features = ["derive"] }
 rand = "0.8.5"
 walkdir = "2.3.2"
