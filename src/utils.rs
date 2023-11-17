@@ -3,6 +3,7 @@ use crate::errors::PQRSError::CouldNotOpenFile;
 use arrow::{datatypes::Schema, record_batch::RecordBatch};
 use log::debug;
 use parquet::arrow::{arrow_reader::ArrowReaderBuilder, ArrowWriter};
+use parquet::file::properties::WriterProperties;
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::record::Row;
 use rand::seq::SliceRandom;
@@ -259,6 +260,7 @@ pub fn get_row_batches(file: File) -> Result<ParquetData, PQRSError> {
 pub fn write_parquet<P: AsRef<Path>>(
     data: ParquetData,
     output: P,
+    props: Option<WriterProperties>,
 ) -> Result<(), PQRSError> {
     let file = File::create(output)?;
     let fields = data.schema.fields().to_vec();
@@ -266,7 +268,8 @@ pub fn write_parquet<P: AsRef<Path>>(
     // drop the schema to make sure that we don't fail in that case
     let schema_without_metadata = Schema::new(fields);
 
-    let mut writer = ArrowWriter::try_new(file, Arc::new(schema_without_metadata), None)?;
+    let mut writer =
+        ArrowWriter::try_new(file, Arc::new(schema_without_metadata), props)?;
 
     // write record batches one at a time
     // record batches are not combined
