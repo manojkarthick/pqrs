@@ -3,7 +3,7 @@ use crate::errors::PQRSError::{FileExists, FileNotFound};
 use crate::utils::{check_path_present, get_row_batches, open_file, write_parquet};
 use clap::Parser;
 use log::debug;
-use parquet::basic::{BrotliLevel, Compression, Encoding, GzipLevel};
+use parquet::basic::{BrotliLevel, Compression, Encoding, GzipLevel, ZstdLevel};
 use parquet::file::properties::{WriterProperties, WriterVersion};
 use parquet::schema::types::ColumnPath;
 use serde::Deserialize;
@@ -89,13 +89,31 @@ fn build_props_from_json_config(
     if let Some(compression_algo) = merge_config.compression {
         if compression_algo.to_lowercase() == "brotli" {
             props = props.set_compression(Compression::BROTLI(
-                BrotliLevel::try_new(merge_config.compression_level.unwrap())
-                    .expect("Invalid Brotli level!"),
+                BrotliLevel::try_new(
+                    merge_config
+                        .compression_level
+                        .expect("Compression level was not set!"),
+                )
+                .expect("Invalid Brotli level!"),
             ))
         } else if compression_algo.to_lowercase() == "gzip" {
             props = props.set_compression(Compression::GZIP(
-                GzipLevel::try_new(merge_config.compression_level.unwrap())
-                    .expect("Invalid GZIP level!"),
+                GzipLevel::try_new(
+                    merge_config
+                        .compression_level
+                        .expect("Compression level was not set!"),
+                )
+                .expect("Invalid GZIP level!"),
+            ))
+        } else if compression_algo.to_lowercase() == "zstd" {
+            props = props.set_compression(Compression::ZSTD(
+                ZstdLevel::try_new(
+                    merge_config
+                        .compression_level
+                        .expect("Compression level was not set!")
+                        as i32,
+                )
+                .expect("Invalid ZSTD level!"),
             ))
         }
     }
