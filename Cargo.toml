@@ -22,8 +22,14 @@ rand = "0.8.5"
 walkdir = "2.3.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+# Performance opts
+jemallocator = "0.5.0"
+
 
 [dev-dependencies]
 assert_cmd = "2.0.4"
 predicates = "2.1.1"
 tempfile = "3.3.0"
+
+[profile.release]
+lto = true

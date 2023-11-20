@@ -6,6 +6,11 @@ mod commands;
 mod errors;
 mod utils;
 
+// use jemalloc for release builds
+extern crate jemallocator;
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 #[derive(Subcommand, Debug)]
 enum Commands {
     Cat(commands::cat::CatCommandArgs),
