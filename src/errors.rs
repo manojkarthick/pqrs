@@ -33,4 +33,6 @@ pub enum PQRSError {
     UTF8ConvertError(#[from] FromUtf8Error),
     #[error("Could not read/write to buffer")]
     BufferWriteError(#[from] IntoInnerError<BufWriter<Vec<u8>>>),
+    #[error("Illegal encoding type")]
+    IllegalEncodingType(),
 }
