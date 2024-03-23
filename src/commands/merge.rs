@@ -1,9 +1,12 @@
 use crate::errors::PQRSError;
 use crate::errors::PQRSError::{FileExists, FileNotFound};
-use crate::utils::{check_path_present, get_row_batches, open_file, write_parquet};
+use crate::utils::{check_path_present, get_row_batches, open_file};
+use parquet::arrow::ArrowWriter;
 use clap::Parser;
+use arrow::datatypes::Schema;
 use log::debug;
-use std::ops::Add;
+use std::fs::File;
+use std::sync::Arc;
 use std::path::PathBuf;
 
 /// Merge file(s) into another parquet file
@@ -34,16 +37,40 @@ pub(crate) fn execute(opts: MergeCommandArgs) -> Result<(), PQRSError> {
         }
     }
 
-    let seed = open_file(&opts.input[0])?;
-    let mut combined = get_row_batches(seed)?;
+    let mut writer = {
+        let seed = open_file(&opts.input[0])?;
+        let data = get_row_batches(seed)?;
+
+        let file = File::create(&opts.output)?;
+        let fields = data.schema.fields().to_vec();
+
+        let schema_without_metadata = Schema::new(fields);
+
+        let mut writer = ArrowWriter::try_new(file, Arc::new(schema_without_metadata), None)?;
+
+        for record_batch in data.batches.iter() {
+            writer.write(record_batch)?;
+        }
+
+        writer
+    };
+
+
     for input in &opts.input[1..] {
         let current = open_file(input)?;
         let local = get_row_batches(current)?;
-        combined = combined.add(local);
+
+        // write record batches one at a time
+        // record batches are not combined
+        for record_batch in local.batches.iter() {
+            writer.write(record_batch)?;
+        }
     }
-    // debug!("The combined data looks like this: {:#?}", combined);
-    // debug!("This is the input schema: {:#?}", combined.schema);
-    write_parquet(combined, &opts.output)?;
+
+    // closing the writer writes out the FileMetaData
+    // if the writer is not closed properly, the metadata footer needed by the parquet
+    // format would be corrupt
+    writer.close()?;
 
     Ok(())
 }
