@@ -255,32 +255,6 @@ pub fn get_row_batches(file: File) -> Result<ParquetData, PQRSError> {
     })
 }
 
-/// Write a parquet file to the output location based on the given parquet input
-pub fn write_parquet<P: AsRef<Path>>(
-    data: ParquetData,
-    output: P,
-) -> Result<(), PQRSError> {
-    let file = File::create(output)?;
-    let fields = data.schema.fields().to_vec();
-    // the schema from the record batch might not contain the file specific metadata
-    // drop the schema to make sure that we don't fail in that case
-    let schema_without_metadata = Schema::new(fields);
-
-    let mut writer = ArrowWriter::try_new(file, Arc::new(schema_without_metadata), None)?;
-
-    // write record batches one at a time
-    // record batches are not combined
-    for record_batch in data.batches.iter() {
-        writer.write(record_batch)?;
-    }
-
-    // closing the writer writes out the FileMetaData
-    // if the writer is not closed properly, the metadata footer needed by the parquet
-    // format would be corrupt
-    writer.close()?;
-    Ok(())
-}
-
 /// Print the given parquet rows in json or json-like format
 fn print_row(row: &Row, format: Formats) {
     match format {
