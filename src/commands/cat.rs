@@ -4,7 +4,6 @@ use crate::utils::Formats;
 use crate::utils::{check_path_present, is_hidden, open_file, print_rows};
 use clap::Parser;
 use log::debug;
-use std::collections::HashSet;
 use std::fs::metadata;
 use std::path::PathBuf;
 use walkdir::WalkDir;
@@ -45,7 +44,7 @@ pub(crate) fn execute(opts: CatCommandArgs) -> Result<(), PQRSError> {
     );
 
     let mut directories = vec![];
-    let mut files = HashSet::new();
+    let mut files = linked_hash_set::LinkedHashSet::new();
     for location in &opts.locations {
         let meta = metadata(location).unwrap();
         if meta.is_dir() {
