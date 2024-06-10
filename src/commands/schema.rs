@@ -3,6 +3,7 @@ use crate::errors::PQRSError::FileNotFound;
 use crate::utils::{check_path_present, open_file};
 use clap::Parser;
 use log::debug;
+use parquet::arrow::parquet_to_arrow_schema;
 use parquet::file::metadata::ParquetMetaData;
 use parquet::file::reader::FileReader;
 use parquet::file::serialized_reader::SerializedFileReader;
@@ -24,6 +25,10 @@ pub struct SchemaCommandArgs {
     /// Print in JSON format
     #[arg(short, long, conflicts_with = "detailed")]
     json: bool,
+
+    /// Convert to arrow schema and print in JSON format
+    #[arg(short, long, conflicts_with = "json")]
+    arrow: bool,
 
     /// Parquet files to read
     files: Vec<PathBuf>,
@@ -101,31 +106,43 @@ pub(crate) fn execute(opts: SchemaCommandArgs) -> Result<(), PQRSError> {
         match SerializedFileReader::new(file) {
             Err(e) => return Err(PQRSError::ParquetError(e)),
             Ok(parquet_reader) => {
-                let metadata = parquet_reader.metadata();
-                if opts.json {
-                    let schema = ParquetSchema {
-                        version: metadata.file_metadata().version(),
-                        num_rows: metadata.file_metadata().num_rows(),
-                        created_by: metadata
-                            .file_metadata()
-                            .created_by()
-                            .map(|str| str.to_string()),
-                        metadata: get_schema_metadata(metadata),
-                        columns: get_column_information(metadata),
-                        message: get_message(metadata)?,
-                    };
-                    let schema_json = serde_json::to_string(&schema)?;
-                    println!("{}", schema_json);
+                if opts.arrow {
+                    // returns a arrow_schema::Schema
+                    // but only arrow::datatypes::Schema is json serializable?
+                    let arrow_schema = parquet_to_arrow_schema(
+                        parquet_reader.metadata().file_metadata().schema_descr(), None
+                    ).unwrap();
+                    let arrow_schema_json = serde_json::to_string_pretty(&arrow_schema).unwrap();
+                    println!("{}", arrow_schema_json);
                 } else {
-                    println!("Metadata for file: {}", file_name.display());
-                    println!();
-                    if opts.detailed {
-                        print_parquet_metadata(&mut std::io::stdout(), metadata);
+
+                    let metadata = parquet_reader.metadata();
+                    if opts.json {
+                        let schema = ParquetSchema {
+                            version: metadata.file_metadata().version(),
+                            num_rows: metadata.file_metadata().num_rows(),
+                            created_by: metadata
+                                .file_metadata()
+                                .created_by()
+                                .map(|str| str.to_string()),
+                            metadata: get_schema_metadata(metadata),
+                            columns: get_column_information(metadata),
+                            message: get_message(metadata)?,
+                        };
+
+                        let schema_json = serde_json::to_string_pretty(&schema)?;
+                        println!("{}", schema_json);
                     } else {
-                        print_file_metadata(
-                            &mut std::io::stdout(),
-                            metadata.file_metadata(),
-                        );
+                        println!("Metadata for file: {}", file_name.display());
+                        println!();
+                        if opts.detailed {
+                            print_parquet_metadata(&mut std::io::stdout(), metadata);
+                        } else {
+                            print_file_metadata(
+                                &mut std::io::stdout(),
+                                metadata.file_metadata(),
+                            );
+                        }
                     }
                 }
             }

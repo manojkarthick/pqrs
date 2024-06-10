@@ -2,7 +2,7 @@ use crate::errors::PQRSError;
 use crate::errors::PQRSError::CouldNotOpenFile;
 use arrow::{datatypes::Schema, record_batch::RecordBatch};
 use log::debug;
-use parquet::arrow::{arrow_reader::ArrowReaderBuilder, ArrowWriter};
+use parquet::arrow::{arrow_reader::ArrowReaderBuilder};
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::record::Row;
 use rand::seq::SliceRandom;
@@ -11,7 +11,6 @@ use std::cmp::min;
 use std::fs::File;
 use std::ops::Add;
 use std::path::Path;
-use std::sync::Arc;
 use walkdir::DirEntry;
 
 // calculate the sizes in bytes for one KiB, MiB, GiB, TiB, PiB
@@ -82,7 +81,12 @@ pub fn print_rows(
 
             while all_records || start < end {
                 match iter.next() {
-                    Some(row) => print_row(&row, format),
+                    Some(row) => {
+                        match row {
+                            Ok(rowval) => print_row(&rowval, format),
+                            Err(_) => todo!(),
+                        }
+                    },
                     None => break,
                 }
                 start += 1;
@@ -141,8 +145,8 @@ pub fn print_rows(
         Formats::CsvNoHeader => {
             let arrow_reader = ArrowReaderBuilder::try_new(file)?;
             let batch_reader = arrow_reader.with_batch_size(8192).build()?;
-            let writer_builder = arrow::csv::WriterBuilder::new().has_headers(false);
-            let mut writer = writer_builder.build(std::io::stdout());
+            let writer_builder = arrow::csv::WriterBuilder::new();
+            let mut writer = writer_builder.with_header(false).build(std::io::stdout());
 
             for maybe_batch in batch_reader {
                 if left == Some(0) {
@@ -194,7 +198,10 @@ pub fn print_rows_random(
 
     for (start, row) in (0_i64..).zip(iter) {
         if indexes.contains(&start) {
-            print_row(&row, format)
+            match row {
+                Ok(rowval) => print_row(&rowval, format),
+                Err(_) => todo!()
+            }
         }
     }
 
