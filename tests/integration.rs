@@ -7,9 +7,9 @@ static CAT_OUTPUT: &str = r#"{continent: "Europe", country: {name: "France", cit
 {continent: "Europe", country: {name: "Greece", city: ["Athens", "Piraeus", "Hania", "Heraklion", "Rethymnon", "Fira"]}}
 {continent: "North America", country: {name: "Canada", city: ["Toronto", "Vancouver", "St. John's", "Saint John", "Montreal", "Halifax", "Winnipeg", "Calgary", "Saskatoon", "Ottawa", "Yellowknife"]}}
 "#;
-static CAT_JSON_OUTPUT: &str = r#"{"continent":"Europe","country":{"city":["Paris","Nice","Marseilles","Cannes"],"name":"France"}}
-{"continent":"Europe","country":{"city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"],"name":"Greece"}}
-{"continent":"North America","country":{"city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"],"name":"Canada"}}
+static CAT_JSON_OUTPUT: &str = r#"{"continent":"Europe","country":{"name":"France","city":["Paris","Nice","Marseilles","Cannes"]}}
+{"continent":"Europe","country":{"name":"Greece","city":["Athens","Piraeus","Hania","Heraklion","Rethymnon","Fira"]}}
+{"continent":"North America","country":{"name":"Canada","city":["Toronto","Vancouver","St. John's","Saint John","Montreal","Halifax","Winnipeg","Calgary","Saskatoon","Ottawa","Yellowknife"]}}
 "#;
 static CAT_CSV_OUTPUT: &str = r#"foo,bar
 1,2
@@ -191,6 +191,21 @@ mod integration {
                     .and(predicate::str::contains("message")),
             ),
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn validate_schema_arrow() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("schema").arg("--arrow").arg(CITIES_PARQUET_PATH);
+        cmd.assert().success().stdout(
+            predicate::str::contains("\"fields\": [")
+            .and(predicate::str::contains("\"name\": \"continent\","))
+            .and(predicate::str::contains("\"name\": \"country\","))
+        );
+
+        // TODO: validate that the stdout is parseable json and can be read by the arrow libs
 
         Ok(())
     }
