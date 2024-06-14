@@ -15,13 +15,14 @@ categories = ["command-line-utilities"]
 thiserror = "1.0.30"
 log = "0.4.16"
 env_logger = "0.9.0"
-parquet = { version = "40.0.0", features = ["cli"] }
-arrow = { version = "40.0.0", features = ["chrono-tz"] }
+parquet = { version = "51.0.0", features = ["cli"] }
+arrow = { version = "51.0.0", features = ["chrono-tz"] }
+arrow-schema = { version = "51.0.0", features = ["serde"] }
 clap = { version = "4.2.7", features = ["derive"] }
 rand = "0.8.5"
 walkdir = "2.3.2"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde_json = "1.0.117"
 linked_hash_set = "0.1.4"
 
 [dev-dependencies]
