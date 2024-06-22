@@ -77,6 +77,24 @@ mod integration {
     }
 
     #[test]
+    fn validate_cat_quiet() -> Result<(), Box<dyn std::error::Error>> {
+        // csv quiet did not show the message
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat").arg(SIMPLE_PARQUET_PATH).arg("--csv");
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::contains(SIMPLE_PARQUET_PATH).not());
+
+        // json quiet did not show the message
+        cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat").arg(SIMPLE_PARQUET_PATH).arg("--json");
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::contains(SIMPLE_PARQUET_PATH).not());
+        Ok(())
+    }
+
+    #[test]
     fn validate_cat_csv_no_header() -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = Command::cargo_bin("pqrs")?;
         cmd.arg("cat")
