@@ -1,7 +1,7 @@
 use crate::errors::PQRSError;
 use crate::errors::PQRSError::FileNotFound;
-use crate::utils::Formats;
 use crate::utils::{check_path_present, is_hidden, open_file, print_rows};
+use crate::utils::{Formats, NestedFieldFormat};
 use clap::Parser;
 use log::debug;
 use std::fs::metadata;
@@ -23,6 +23,10 @@ pub struct CatCommandArgs {
     #[arg(short, long, conflicts_with = "csv")]
     json: bool,
 
+    /// How to handle nested fields in CSV output
+    #[arg(long, requires = "csv", default_value = "error")]
+    nested_fields: NestedFieldFormat,
+
     /// Parquet files or folders to read from
     locations: Vec<PathBuf>,
 }
@@ -31,9 +35,9 @@ pub(crate) fn execute(opts: CatCommandArgs) -> Result<(), PQRSError> {
     let format = if opts.json {
         Formats::Json
     } else if opts.csv_no_header {
-        Formats::CsvNoHeader
+        Formats::CsvNoHeader(opts.nested_fields)
     } else if opts.csv {
-        Formats::Csv
+        Formats::Csv(opts.nested_fields)
     } else {
         Formats::Default
     };

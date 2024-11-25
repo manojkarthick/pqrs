@@ -1,8 +1,13 @@
 use crate::errors::PQRSError;
 use crate::errors::PQRSError::CouldNotOpenFile;
-use arrow::{datatypes::Schema, record_batch::RecordBatch};
+use arrow::{
+    array::{Array, ArrayBuilder, ArrayRef, StringBuilder},
+    datatypes::{DataType, Field, FieldRef, Schema, SchemaRef},
+    record_batch::RecordBatch,
+};
+use clap::ValueEnum;
 use log::debug;
-use parquet::arrow::{arrow_reader::ArrowReaderBuilder};
+use parquet::arrow::arrow_reader::ArrowReaderBuilder;
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::record::Row;
 use rand::seq::SliceRandom;
@@ -24,12 +29,29 @@ static ONE_PI_B: i64 = ONE_TI_B * 1024;
 #[derive(Copy, Clone, Debug)]
 pub enum Formats {
     Default,
-    Csv,
-    CsvNoHeader,
+    Csv(NestedFieldFormat),
+    CsvNoHeader(NestedFieldFormat),
     Json,
 }
 
 impl std::fmt::Display for Formats {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+/// How to handle nested field types in formats that do not support them, like CSV.
+#[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum NestedFieldFormat {
+    /// Output an error message and abort.
+    Error,
+    /// Omit columns with nested field types.
+    Omit,
+    /// Encode nested fields as JSON.
+    Json,
+}
+
+impl std::fmt::Display for NestedFieldFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
@@ -81,11 +103,9 @@ pub fn print_rows(
 
             while all_records || start < end {
                 match iter.next() {
-                    Some(row) => {
-                        match row {
-                            Ok(rowval) => print_row(&rowval, format),
-                            Err(_) => todo!(),
-                        }
+                    Some(row) => match row {
+                        Ok(rowval) => print_row(&rowval, format),
+                        Err(_) => todo!(),
                     },
                     None => break,
                 }
@@ -118,7 +138,7 @@ pub fn print_rows(
 
             writer.finish()?;
         }
-        Formats::Csv => {
+        Formats::Csv(nested_format) => {
             let arrow_reader = ArrowReaderBuilder::try_new(file)?;
             let batch_reader = arrow_reader.with_batch_size(8192).build()?;
             let mut writer = arrow::csv::Writer::new(std::io::stdout());
@@ -128,7 +148,8 @@ pub fn print_rows(
                     break;
                 }
 
-                let mut batch = maybe_batch?;
+                let batch = maybe_batch?;
+                let mut batch = nested_fields_to_json(batch, nested_format)?;
                 if let Some(l) = left {
                     if batch.num_rows() <= l {
                         left = Some(l - batch.num_rows());
@@ -142,7 +163,7 @@ pub fn print_rows(
                 writer.write(&batch)?;
             }
         }
-        Formats::CsvNoHeader => {
+        Formats::CsvNoHeader(nested_format) => {
             let arrow_reader = ArrowReaderBuilder::try_new(file)?;
             let batch_reader = arrow_reader.with_batch_size(8192).build()?;
             let writer_builder = arrow::csv::WriterBuilder::new();
@@ -153,7 +174,8 @@ pub fn print_rows(
                     break;
                 }
 
-                let mut batch = maybe_batch?;
+                let batch = maybe_batch?;
+                let mut batch = nested_fields_to_json(batch, nested_format)?;
                 if let Some(l) = left {
                     if batch.num_rows() <= l {
                         left = Some(l - batch.num_rows());
@@ -169,6 +191,94 @@ pub fn print_rows(
         }
     }
     Ok(())
+}
+
+/// Encodes nested field types to string columns in JSON encoding for use in CSV output.
+fn nested_fields_to_json(
+    batch: RecordBatch,
+    nested_format: NestedFieldFormat,
+) -> Result<RecordBatch, PQRSError> {
+    let schema = batch.schema();
+    let columns = batch.columns();
+
+    if matches!(nested_format, NestedFieldFormat::Error) {
+        let nested_fields = schema
+            .fields()
+            .iter()
+            .filter(|field| field.data_type().is_nested())
+            .collect::<Vec<_>>();
+        if nested_fields.is_empty() {
+            return Ok(batch);
+        } else {
+            return Err(PQRSError::NestedFieldsError(
+                nested_fields
+                    .iter()
+                    .map(|field| field.name().to_owned())
+                    .collect(),
+            ));
+        }
+    }
+
+    let mut new_fields = Vec::new();
+    let mut new_columns = Vec::<ArrayRef>::new();
+    for (field, column) in std::iter::zip(schema.fields(), columns) {
+        if field.data_type().is_nested() {
+            match nested_format {
+                NestedFieldFormat::Error => {
+                    unreachable!();
+                }
+                NestedFieldFormat::Omit => {}
+                NestedFieldFormat::Json => {
+                    new_fields.push(FieldRef::new(Field::new(
+                        field.name(),
+                        DataType::Utf8,
+                        field.is_nullable(),
+                    )));
+                    new_columns.push(array_to_json(ArrayRef::clone(column)));
+                }
+            }
+        } else {
+            new_fields.push(FieldRef::clone(field));
+            new_columns.push(ArrayRef::clone(column));
+        }
+    }
+
+    let new_schema = SchemaRef::new(Schema::new_with_metadata(
+        new_fields,
+        schema.metadata().clone(),
+    ));
+    Ok(RecordBatch::try_new(new_schema, new_columns).unwrap())
+}
+
+/// Encodes an array as JSON, returning a `StringArray`.
+fn array_to_json(array: ArrayRef) -> ArrayRef {
+    let array_len = array.len();
+
+    // arrow_json doesn't have a way to encode a single value or even a single array. So we encode
+    // a batch with one column, then split the result into lines.
+    let batch = RecordBatch::try_from_iter([("", array)]).unwrap();
+
+    let mut buf = Vec::new();
+    let mut writer = arrow::json::LineDelimitedWriter::new(&mut buf);
+    writer.write(&batch).unwrap();
+    writer.finish().unwrap();
+
+    let buf_str = String::from_utf8(buf).unwrap();
+    let mut builder = StringBuilder::with_capacity(array_len, 0);
+    for line in buf_str.lines() {
+        // Format is {"":VALUE}
+        // Nulls are encoded as {}
+        if line.starts_with(r#"{"":"#) && line.ends_with("}") {
+            builder.append_value(&line[4..line.len() - 1]);
+        } else if line == "{}" {
+            builder.append_null();
+        } else {
+            panic!("unexpected JSON output {:?}", line);
+        }
+    }
+    assert_eq!(array_len, builder.len());
+
+    ArrayBuilder::finish(&mut builder)
 }
 
 /// Print the random sample of given size in either json or json-like format
@@ -200,7 +310,7 @@ pub fn print_rows_random(
         if indexes.contains(&start) {
             match row {
                 Ok(rowval) => print_row(&rowval, format),
-                Err(_) => todo!()
+                Err(_) => todo!(),
             }
         }
     }
@@ -266,8 +376,8 @@ pub fn get_row_batches(file: File) -> Result<ParquetData, PQRSError> {
 fn print_row(row: &Row, format: Formats) {
     match format {
         Formats::Default => println!("{}", row),
-        Formats::Csv => println!("Unsupported! {}", row),
-        Formats::CsvNoHeader => println!("Unsupported! {}", row),
+        Formats::Csv(_) => println!("Unsupported! {}", row),
+        Formats::CsvNoHeader(_) => println!("Unsupported! {}", row),
         Formats::Json => println!("{}", row.to_json_value()),
     }
 }

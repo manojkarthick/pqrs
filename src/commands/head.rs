@@ -1,6 +1,8 @@
 use crate::errors::PQRSError;
 use crate::errors::PQRSError::FileNotFound;
-use crate::utils::{check_path_present, open_file, print_rows, Formats};
+use crate::utils::{
+    check_path_present, open_file, print_rows, Formats, NestedFieldFormat,
+};
 use clap::Parser;
 use log::debug;
 use std::path::PathBuf;
@@ -12,6 +14,10 @@ pub struct HeadCommandArgs {
     #[arg(short, long, conflicts_with = "json")]
     csv: bool,
 
+    /// Use CSV format without a header for printing
+    #[arg(long = "no-header", requires = "csv", conflicts_with = "json")]
+    csv_no_header: bool,
+
     /// Use JSON lines format for printing
     #[arg(short, long, conflicts_with = "csv")]
     json: bool,
@@ -20,6 +26,10 @@ pub struct HeadCommandArgs {
     #[arg(short = 'n', long, default_value = "5")]
     records: usize,
 
+    /// How to handle nested fields in CSV output
+    #[arg(long, requires = "csv", default_value = "error")]
+    nested_fields: NestedFieldFormat,
+
     /// Parquet file to read
     file: PathBuf,
 }
@@ -27,8 +37,10 @@ pub struct HeadCommandArgs {
 pub(crate) fn execute(opts: HeadCommandArgs) -> Result<(), PQRSError> {
     let format = if opts.json {
         Formats::Json
+    } else if opts.csv_no_header {
+        Formats::CsvNoHeader(opts.nested_fields)
     } else if opts.csv {
-        Formats::Csv
+        Formats::Csv(opts.nested_fields)
     } else {
         Formats::Default
     };

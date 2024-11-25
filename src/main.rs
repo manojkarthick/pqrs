@@ -1,6 +1,5 @@
 use clap::{Parser, Subcommand};
-
-use crate::errors::PQRSError;
+use std::process::ExitCode;
 
 mod commands;
 mod errors;
@@ -29,7 +28,7 @@ struct Args {
     command: Commands,
 }
 
-fn main() -> Result<(), PQRSError> {
+fn main() -> ExitCode {
     let args = Args::parse();
 
     if args.debug {
@@ -39,15 +38,20 @@ fn main() -> Result<(), PQRSError> {
 
     log::debug!("args: {:?}", args);
 
-    match args.command {
-        Commands::Cat(opts) => commands::cat::execute(opts)?,
-        Commands::Head(opts) => commands::head::execute(opts)?,
-        Commands::Merge(opts) => commands::merge::execute(opts)?,
-        Commands::RowCount(opts) => commands::rowcount::execute(opts)?,
-        Commands::Sample(opts) => commands::sample::execute(opts)?,
-        Commands::Schema(opts) => commands::schema::execute(opts)?,
-        Commands::Size(opts) => commands::size::execute(opts)?,
-    }
+    let result = match args.command {
+        Commands::Cat(opts) => commands::cat::execute(opts),
+        Commands::Head(opts) => commands::head::execute(opts),
+        Commands::Merge(opts) => commands::merge::execute(opts),
+        Commands::RowCount(opts) => commands::rowcount::execute(opts),
+        Commands::Sample(opts) => commands::sample::execute(opts),
+        Commands::Schema(opts) => commands::schema::execute(opts),
+        Commands::Size(opts) => commands::size::execute(opts),
+    };
 
-    Ok(())
+    if let Err(error) = result.as_ref() {
+        eprintln!("{}", error);
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    }
 }

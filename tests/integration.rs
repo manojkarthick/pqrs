@@ -16,6 +16,15 @@ static CAT_CSV_OUTPUT: &str = r#"foo,bar
 10,20"#;
 static CAT_CSV_NO_HEADER_OUTPUT: &str = r#"1,2
 10,20"#;
+static CAT_CSV_NESTED_ERROR_OUTPUT: &str = r#"["country"]"#;
+static CAT_CSV_NESTED_OMIT_OUTPUT: &str = r#"continent
+Europe
+Europe
+North America"#;
+static CAT_CSV_NESTED_JSON_OUTPUT: &str = r#"continent,country
+Europe,"{""name"":""France"",""city"":[""Paris"",""Nice"",""Marseilles"",""Cannes""]}"
+Europe,"{""name"":""Greece"",""city"":[""Athens"",""Piraeus"",""Hania"",""Heraklion"",""Rethymnon"",""Fira""]}"
+North America,"{""name"":""Canada"",""city"":[""Toronto"",""Vancouver"",""St. John's"",""Saint John"",""Montreal"",""Halifax"",""Winnipeg"",""Calgary"",""Saskatoon"",""Ottawa"",""Yellowknife""]}""#;
 static SCHEMA_OUTPUT: &str = r#"message hive_schema {
   OPTIONAL BYTE_ARRAY continent (UTF8);
   OPTIONAL group country {
@@ -34,10 +43,11 @@ static SAMPLE_PARTIAL_OUTPUT_2: &str = "country: {name:";
 mod integration {
     // make sure any new commands added have a corresponding integration test here!
     use crate::{
-        CAT_CSV_NO_HEADER_OUTPUT, CAT_CSV_OUTPUT, CAT_JSON_OUTPUT, CAT_OUTPUT,
-        CITIES_PARQUET_PATH, MERGED_FILE_NAME, PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH,
-        SAMPLE_PARTIAL_OUTPUT_1, SAMPLE_PARTIAL_OUTPUT_2, SCHEMA_OUTPUT,
-        SIMPLE_PARQUET_PATH,
+        CAT_CSV_NESTED_ERROR_OUTPUT, CAT_CSV_NESTED_JSON_OUTPUT,
+        CAT_CSV_NESTED_OMIT_OUTPUT, CAT_CSV_NO_HEADER_OUTPUT, CAT_CSV_OUTPUT,
+        CAT_JSON_OUTPUT, CAT_OUTPUT, CITIES_PARQUET_PATH, MERGED_FILE_NAME,
+        PEMS_1_PARQUET_PATH, PEMS_2_PARQUET_PATH, SAMPLE_PARTIAL_OUTPUT_1,
+        SAMPLE_PARTIAL_OUTPUT_2, SCHEMA_OUTPUT, SIMPLE_PARQUET_PATH,
     };
     use assert_cmd::Command;
     use predicates::prelude::*;
@@ -72,6 +82,45 @@ mod integration {
         cmd.assert()
             .success()
             .stdout(predicate::str::contains(CAT_CSV_OUTPUT));
+
+        Ok(())
+    }
+
+    #[test]
+    fn validate_cat_csv_nested_error() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat").arg(CITIES_PARQUET_PATH).arg("--csv");
+        cmd.assert()
+            .failure()
+            .stderr(predicate::str::contains(CAT_CSV_NESTED_ERROR_OUTPUT));
+
+        Ok(())
+    }
+
+    #[test]
+    fn validate_cat_csv_nested_omit() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat")
+            .arg(CITIES_PARQUET_PATH)
+            .arg("--csv")
+            .arg("--nested-fields=omit");
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::contains(CAT_CSV_NESTED_OMIT_OUTPUT));
+
+        Ok(())
+    }
+
+    #[test]
+    fn validate_cat_csv_nested_json() -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = Command::cargo_bin("pqrs")?;
+        cmd.arg("cat")
+            .arg(CITIES_PARQUET_PATH)
+            .arg("--csv")
+            .arg("--nested-fields=json");
+        cmd.assert()
+            .success()
+            .stdout(predicate::str::contains(CAT_CSV_NESTED_JSON_OUTPUT));
 
         Ok(())
     }
@@ -201,8 +250,8 @@ mod integration {
         cmd.arg("schema").arg("--arrow").arg(CITIES_PARQUET_PATH);
         cmd.assert().success().stdout(
             predicate::str::contains("\"fields\": [")
-            .and(predicate::str::contains("\"name\": \"continent\","))
-            .and(predicate::str::contains("\"name\": \"country\","))
+                .and(predicate::str::contains("\"name\": \"continent\","))
+                .and(predicate::str::contains("\"name\": \"country\",")),
         );
 
         // TODO: validate that the stdout is parseable json and can be read by the arrow libs

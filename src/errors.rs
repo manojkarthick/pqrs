@@ -33,4 +33,8 @@ pub enum PQRSError {
     UTF8ConvertError(#[from] FromUtf8Error),
     #[error("Could not read/write to buffer")]
     BufferWriteError(#[from] IntoInnerError<BufWriter<Vec<u8>>>),
+    #[error(
+        "Columns encountered with nested field types, which are not supported in CSV: {0:?}\nHint: Use `--nested-fields=omit` to omit them, or `--nested-fields=json` to encode them as JSON.",
+    )]
+    NestedFieldsError(Vec<String>),
 }
