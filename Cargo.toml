@@ -12,20 +12,20 @@ keywords = ["cli", "arrow", "parquet"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-thiserror = "1.0.30"
-log = "0.4.16"
-env_logger = "0.9.0"
+thiserror = "1.0.69"
+log = "0.4.28"
+env_logger = "0.9.3"
 parquet = { version = "51.0.0", features = ["cli"] }
 arrow = { version = "51.0.0", features = ["chrono-tz"] }
 arrow-schema = { version = "51.0.0", features = ["serde"] }
-clap = { version = "4.2.7", features = ["derive"] }
+clap = { version = "4.5.47", features = ["derive"] }
 rand = "0.8.5"
-walkdir = "2.3.2"
+walkdir = "2.5.0"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.117"
-linked_hash_set = "0.1.4"
+serde_json = "1.0.143"
+linked_hash_set = "0.1.5"
 
 [dev-dependencies]
-assert_cmd = "2.0.4"
-predicates = "2.1.1"
-tempfile = "3.3.0"
+assert_cmd = "2.0.17"
+predicates = "2.1.5"
+tempfile = "3.21.0"
